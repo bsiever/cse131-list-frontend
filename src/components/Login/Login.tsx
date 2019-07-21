@@ -17,7 +17,7 @@ const Login: React.FC<LoginProps>  = ({performLogin}) => {
         <div className='align-items-center align-middle my-auto'>
             <h1>Welcome to the CSE 131 Help List!</h1>
             <form onSubmit={handleSubmit}>
-                <div className='form-groug'>
+                <div className='form-group'>
                     <label className='text-left'>
                         Email
                         <input type='email' className='form-control' maxLength={50} value={username} onChange={e=>setUsername(e.target.value)} placeholder='Username' required />

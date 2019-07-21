@@ -1,0 +1,8 @@
+.close, .close:hover {
+    color: #fff; 
+    opacity: 1;
+}
+
+.show {
+    display: block;
+}
