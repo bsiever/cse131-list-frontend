@@ -53,7 +53,7 @@ const Sidebar: React.FC<SidebarProps>  = ({id, userToken, fullName, refreshUserI
                     </div>
                     <div className='modalBody'>
                         <form className='form-inline justify-content-center m-2' onSubmit={updateInformation}>
-                            <div className='form-group pb-3'>
+                            <div className='form-group'>
                                 <label className='text-left mr-3'>
                                     Name
                                     <input type='text' className='form-control ml-3 input-medium' maxLength={50} value={newName} onChange={e=>setNewName(e.target.value)} placeholder='Name' required />
