@@ -12,7 +12,7 @@ interface ListProps {
     list: ListInfo,
     leaveList(level: PermissionLevel): void
 }
-enum WebSocketMessages{
+export enum WebSocketMessages{
     InitalizeSession = 'initSession',
     SetPosition = 'setPos',
     CloseListSession = 'closeListSession',

@@ -59,7 +59,7 @@ class App extends React.Component {
         document.cookie = "token="+data.userToken;
         window.history.replaceState({}, document.title, "/");
       } else {
-        window.alert('Login failed, please refresh the page and try again');
+        window.alert('Login failed, please make sure you have the appropriate email on your Github Account');
       }
     } else if(getCookie("token") !== "" && getCookie("id") !== "" ) {
       let success = await this.refreshUserInfo(getCookie("id"),getCookie("token"),true);
