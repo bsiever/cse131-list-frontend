@@ -1,5 +1,5 @@
 import React from 'react';
-import {ClassObj} from '../../utility/types'
+import {ClassObj, PermissionLevel} from '../../utility/types'
 import ClassSelector from '../ClassSelector/ClassSelector';
 import LoginWrapper from '../Login/LoginWrapper';
 import AdminManagement from '../AdminManagement/AdminManagement';
@@ -9,6 +9,29 @@ import { makeRequest, APIResponse } from '../../utility/api';
 import GlobalNav from '../GlobalNav/GlobalNav';
 import List, { ListInfo } from '../List/List';
 
+function getUrlVars() {
+  var vars = {} as any;
+  window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m: any,key: string | number,value: any) {
+      vars[key] = value;
+  } as any );
+  return vars;
+}
+//https://www.w3schools.com/js/js_cookies.asp
+function getCookie(cname: string) {
+  var name = cname + "=";
+  var decodedCookie = decodeURIComponent(document.cookie);
+  var ca = decodedCookie.split(';');
+  for(var i = 0; i <ca.length; i++) {
+    var c = ca[i];
+    while (c.charAt(0) === ' ') {
+      c = c.substring(1);
+    }
+    if (c.indexOf(name) === 0) {
+      return c.substring(name.length, c.length);
+    }
+  }
+  return "";
+}
 class App extends React.Component {
   state = {
     id: '',
@@ -24,6 +47,32 @@ class App extends React.Component {
 
   /*State Hooks*/
 
+  
+  componentDidMount = async ()=> {
+    if(window.location.href.indexOf('code') > -1){
+      let client_code = getUrlVars()['code'];
+      let response: APIResponse = await makeRequest('login',{client_code});
+      if(response.success) {
+        const data: any = response.data;
+        this.setUserInfo(data.id, data.username, data.fullName, data.userToken, data.classes, data.admin);
+        document.cookie = "id="+data.id;
+        document.cookie = "token="+data.userToken;
+        window.history.replaceState({}, document.title, "/");
+      } else {
+        window.alert('Login failed, please refresh the page and try again');
+      }
+    } else if(getCookie("token") !== "" && getCookie("id") !== "" ) {
+      let success = await this.refreshUserInfo(getCookie("id"),getCookie("token"),true);
+      if(success) {
+        await this.setState({id: getCookie("id"), userToken: getCookie("token")});
+      } else {
+        document.cookie = "";
+      }
+    }
+  }
+
+  
+
   setUserInfo = (id: string, username: string, name: string, userToken: string, classes: ClassObj[], admin: boolean) => {
     this.setState({id,username, name,userToken,tokenTime: Date.now(),classes, admin})
   }
@@ -37,12 +86,13 @@ class App extends React.Component {
   }
   /*Update Function*/
 
-  refreshUserInfo = async () => {
-    let response: APIResponse = await makeRequest('refreshUserInfo',{id: this.state.id, userToken: this.state.userToken});
+  refreshUserInfo = async (id = this.state.id, userToken = this.state.userToken, failureAllowed = false): Promise<boolean> => {
+    let response: APIResponse = await makeRequest('refreshUserInfo',{id, userToken},failureAllowed);
     if(response.success) {
       const data: any = response.data;
-      this.setState({classes: data.classes, username: data.username, name: data.fullName})
+      this.setState({classes: data.classes, username: data.username, name: data.fullName, admin: data.admin})
     }
+    return response.success;
   }
   
   exitClass = async () => {
@@ -50,7 +100,7 @@ class App extends React.Component {
     this.setState({currentClass: null})
   }
 
-  leaveList = async () => {
+  leaveList = async (level: PermissionLevel) => {
     this.setState({currentList: null})
   }
 
@@ -81,10 +131,10 @@ class App extends React.Component {
   render() {
     let mainItem;
     if(this.state.userToken === null) {
-      mainItem = <LoginWrapper setUserInfo={this.setUserInfo.bind(this)} />
+      mainItem = <LoginWrapper />
     } else if(this.state.currentClass === null) {
       mainItem = <div>
-        <ClassSelector classes={this.state.classes} selectClass={this.selectClass} />
+        <ClassSelector classes={this.state.classes} selectClass={this.selectClass} id={this.state.id} userToken ={this.state.userToken} refreshClasses={()=>this.refreshUserInfo()} />
         {this.state.admin && <div  className='align-items-center align-middle my-auto'>
           <h1>Administrative Settings</h1>
           <CreateClass id={this.state.id} userToken = {this.state.userToken as string} refreshClasses= {this.refreshUserInfo}/> 

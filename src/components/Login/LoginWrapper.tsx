@@ -1,37 +1,16 @@
-import React, { useState } from 'react';
-import Login from './Login';
-import { makeRequest, APIResponse} from '../../utility/api';
-import { ErrorTypes, ClassObj } from '../../utility/types';
+import React from 'react';
+
 
 interface LoginWrapperProps {
-    setUserInfo(id: string, username: string, name: string, token: string, classes: ClassObj[], admin: boolean ): void;
+    // setUserInfo(id: string, username: string, name: string, token: string, classes: ClassObj[], admin: boolean ): void;
 }
 
-const LoginWrapper: React.FC<LoginWrapperProps>  = ({setUserInfo}) => {
-
-    const [errorMessage, setErrorMessage] = useState('');
-
-    const performLogin = async (username: string, password: string) => {
-        let response: APIResponse = await makeRequest('login',{username, password});
-        if(response.success) {
-          const data: any = response.data;
-          setUserInfo(data.id, data.username, data.fullName, data.userToken, data.classes, data.admin);
-        } else {
-            switch(response.errorCode) {
-                case ErrorTypes.InvalidLogin:
-                    setErrorMessage('Invalid Username or Password');
-                    break;
-                default:
-                    setErrorMessage('An Error Occured');
-                    break;
-            }
-        }
-    }
+const LoginWrapper: React.FC<LoginWrapperProps>  = () => {
 
     return (
         <div className='align-items-center align-middle my-auto'>
-            <Login performLogin={performLogin} />
-            <p className='p-3'>{errorMessage}</p>
+            <h1>Welcome to the CSE 131 Help List!</h1>
+            <button onClick={()=>{window.location.href = 'https://github.com/login/oauth/authorize?client_id=9765e58690fb0cd32bd4&scope=user:email%20read:org%20read:user';}} className='btn btn-primary'>Login</button>
         </div>
     );
 }

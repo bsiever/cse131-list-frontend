@@ -10,7 +10,7 @@ export interface APIResponse {
 
 const queryTimeout = 5000;
 
-export const makeRequest = async (name: string, data: any) : Promise<APIResponse> => {
+export const makeRequest = async (name: string, data: any, failureAllowed: boolean = false) : Promise<APIResponse> => {
     try {
         const raw= await Promise.race([
             fetch(prefixUrl+name,{method:'POST', body: JSON.stringify(data)}), //This causes all requests to fail after 5 seconds
@@ -20,7 +20,7 @@ export const makeRequest = async (name: string, data: any) : Promise<APIResponse
         if(raw.status === 200) {
             return {success: true, data: json.data}
         } else {
-            if(json.errorCode === ErrorTypes.InvalidToken) {
+            if(json.errorCode === ErrorTypes.InvalidToken && !failureAllowed) {
                 window.alert('You have been logged out due to inactivity or opening another session.')
                 window.location.reload()
             }

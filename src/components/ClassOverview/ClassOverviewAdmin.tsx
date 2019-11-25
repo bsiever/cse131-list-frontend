@@ -19,7 +19,10 @@ const ClassOverviewAdmin: React.FC<ClassOverviewAdminProps>  = ({id, userToken, 
     const [requestInProgress, setRequestInProgress] = useState(false);
     const [newPermissionLevel, setNewPermissionLevel] = useState(PermissionLevel.Student)
     const [newClassName, setNewClassName] = useState('')
-    
+    const [studentCode, setStudentCode] = useState('');
+    const [adminCode, setAdminCode] = useState('');
+    const [taCode, setTaCode] = useState('');
+
     const loadClassInformation = async (e: { preventDefault: () => void; }) => {
         if(e) e.preventDefault();
         await updateClassInfo();
@@ -32,9 +35,12 @@ const ClassOverviewAdmin: React.FC<ClassOverviewAdminProps>  = ({id, userToken, 
         }
         let response: APIResponse = await makeRequest('getClassAdminInfo', {id, userToken,classId});
         if(response.success) {
-            let data: User[] = (response.data as any) as User[];
-            data.sort((a,b)=> (a.fullName > b.fullName) ? 1 : (a.fullName < b.fullName) ? -1: 0) //Sort by name
-            await setClassUsers(data)
+            let data = response.data as {classUsers: User[], userCode: string, taCode: string, adminCode: string};
+            data.classUsers.sort((a,b)=> (a.fullName > b.fullName) ? 1 : (a.fullName < b.fullName) ? -1: 0) //Sort by name
+            await setClassUsers(data.classUsers)
+            await setStudentCode(data.userCode);
+            await setTaCode(data.taCode);
+            await setAdminCode(data.adminCode);
         } else {
             console.error("Unable to update admin information")
         }
@@ -68,7 +74,7 @@ const ClassOverviewAdmin: React.FC<ClassOverviewAdminProps>  = ({id, userToken, 
     const changeClassName = async (e: { preventDefault: () => void; }) => {
         if(e) e.preventDefault();
         await setRequestInProgress(true)
-        const newClassInfo = await makeRequest('setClassInfo',{id, userToken, classId, newClassName})
+        const newClassInfo = await makeRequest('setClassName',{id, userToken, classId, newClassName})
         if(newClassInfo.success) {
             await updateCurrentClass(newClassInfo.data as ClassObj);
         } else {
@@ -138,6 +144,12 @@ const ClassOverviewAdmin: React.FC<ClassOverviewAdminProps>  = ({id, userToken, 
                 </div>
                 <button type='submit' className='btn btn-success' disabled={requestInProgress}>Add User</button>
             </form>
+            {classUsers && <div>
+                <h4>Join Codes</h4>
+                <p>Student Code: {studentCode}</p>
+                <p>TA Code: {taCode}</p>
+                <p>Professor/Head TA Code: {adminCode}</p>
+            </div>}
             <h4>Manage Class Users</h4>
             <table className='table table-dark'>
                 <tbody>

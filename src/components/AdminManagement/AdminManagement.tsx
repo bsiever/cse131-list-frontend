@@ -77,7 +77,7 @@ const AdminManagement: React.FC<AdminManagementProps>  = ({id, userToken}) => {
             <table className='table table-dark'>
                 <tbody>
                     <tr><th>Name</th><th>Email</th><th>Remove User</th></tr>
-                    {adminUsers.map(user=><tr key={user.id}><td>{user.fullName}</td><td>{user.username}</td><td><button className='btn btn-danger' onClick={(e)=>deleteUser(e,user)} disabled={requestInProgress}>&times;</button></td></tr>)}
+                    {adminUsers.map(user=><tr key={user.id}><td>{user.fullName}</td><td className="text-break">{user.username}</td><td><button className='btn btn-danger' onClick={(e)=>deleteUser(e,user)} disabled={requestInProgress}>&times;</button></td></tr>)}
                 </tbody>
             </table> :
             <button className='btn btn-primary' onClick={loadAdminInformation}>Load Existing Users</button> }

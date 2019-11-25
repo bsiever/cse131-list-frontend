@@ -1,22 +1,17 @@
 import React, { useState} from 'react';
 import { makeRequest, APIResponse } from '../../utility/api';
-import { ErrorTypes } from '../../utility/types'
 import './Sidebar.css'
 
 interface SidebarProps {
     id: string,
     userToken: string,
-    username: string,
     fullName: string,
     refreshUserInfo(): void,
     close(): void,
     logout(): Promise<boolean>
 }
 
-const Sidebar: React.FC<SidebarProps>  = ({id, userToken, username, fullName, refreshUserInfo, close, logout}) => {
-    const [newUsername, setNewUsername] = useState(username);
-    const [newPassword, setNewPassword] = useState('');
-    const [changingPassword, setChangingPassword] = useState(false);
+const Sidebar: React.FC<SidebarProps>  = ({id, userToken, fullName, refreshUserInfo, close, logout}) => {
     const [requestInProgress, setRequestInProgress] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
     const [newName, setNewName] = useState(fullName)
@@ -25,25 +20,15 @@ const Sidebar: React.FC<SidebarProps>  = ({id, userToken, username, fullName, re
         if(e) e.preventDefault();
         await setRequestInProgress(true)
         //Add user
-        const response: APIResponse = await makeRequest('setUserInfo', {id, userToken, newUsername, newName, newPassword: changingPassword ? newPassword : null});
+        const response: APIResponse = await makeRequest('setUserInfo', {id, userToken, newName});
         if(response.success) {
             await refreshUserInfo();
-            setNewPassword('');
-            setChangingPassword(false);
             setErrorMessage('Updated Information Successfully')
             setRequestInProgress(false)
             close();
             return
         } else {
-            switch(response.errorCode) {
-                case ErrorTypes.UsernameAlreadyExists:
-                    setErrorMessage('Username Already Exists');
-                    break;
-                default:
-                    setErrorMessage('An Error Occured');
-                    break;
-            }
-            
+            setErrorMessage('An Error Occured');
         }
         setRequestInProgress(false)
     }
@@ -70,32 +55,10 @@ const Sidebar: React.FC<SidebarProps>  = ({id, userToken, username, fullName, re
                         <form className='form-inline justify-content-center m-2' onSubmit={updateInformation}>
                             <div className='form-group pb-3'>
                                 <label className='text-left mr-3'>
-                                    Username
-                                    <input type='email' className='form-control ml-3 input-medium' maxLength={100} value={newUsername} onChange={e=>setNewUsername(e.target.value)} placeholder='Username' required />
-                                </label>
-                            </div>
-                            <div className='form-group pb-3'>
-                                <label className='text-left mr-3'>
                                     Name
                                     <input type='text' className='form-control ml-3 input-medium' maxLength={50} value={newName} onChange={e=>setNewName(e.target.value)} placeholder='Name' required />
                                 </label>
                             </div>
-                            <div className='d-flex'>
-                                <div className='form-check pb-3'>
-                                    <label className='text-left mr-3 form-check-label'>
-                                        Change Password?
-                                        <input type='checkbox' className='form-check-input ml-3' checked={changingPassword} onChange={e=>setChangingPassword(e.target.checked)}/>
-                                    </label>
-                                </div>
-                                <div className='form-group pb-3'>
-                                    <label className='text-left mr-3'>
-                                        Password
-                                        <input type='password' className='form-control ml-3' value={newPassword} onChange={e=>setNewPassword(e.target.value)} placeholder='Password' disabled={!changingPassword} required />
-                                    </label>
-                                </div>
-                            </div>
-                            
-                            
                             <button type='submit' className='btn btn-primary' disabled={requestInProgress}>Update User Information</button>
                         </form>
                         {errorMessage && <p className='mb-2'>{errorMessage}</p>}

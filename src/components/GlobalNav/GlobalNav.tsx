@@ -26,7 +26,7 @@ const GlobalNav: React.FC<GlobalNavProps>  = ({id, userToken, username, fullName
                 <h1 className="navbar-brand mr-auto mb-0 ml-sm-0 ml-auto" onClick={goHome}>131 Help List Prototype</h1>
                 {id && <button className="btn btn-primary" type="button" data-toggle='modal' data-target='#userUpdateModal' aria-label="Open User Settings" onClick={()=>setShowModal(true)} >{username}</button> }
             </nav>
-            {showModal && <Sidebar id={id} userToken={userToken} username={username} fullName={fullName} refreshUserInfo={refreshUserInfo} close={()=>setShowModal(false)} logout={logoutWrapper}/> }
+            {showModal && <Sidebar id={id} userToken={userToken} fullName={fullName} refreshUserInfo={refreshUserInfo} close={()=>setShowModal(false)} logout={logoutWrapper}/> }
         </React.Fragment>
     )
 }

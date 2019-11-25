@@ -13,7 +13,10 @@ export enum ErrorTypes {
     ClassDoesNotExist,
     InvalidDatabaseRequest,
     UserNotInClass,
-    UsernameAlreadyExists
+    UsernameAlreadyExists,
+    ConnectionNotInSession,
+    SessionDoesNotExist,
+    UserAlreadyInClass
 }
 
 export interface User {
