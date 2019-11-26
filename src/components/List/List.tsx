@@ -30,7 +30,7 @@ interface Message {
 
 interface FullInfo {
     listUsers: [{fullName: string}],
-    observers: [{fullName: string,permissionLevel: PermissionLevel}]
+    observers: [{fullName: string,permissionLevel: PermissionLevel, startTime: number, timedEventTime?: number,helpedStudents?: number, flaggedStudents?: number,helpedFlaggedStudents?: number}]
 }
 
 
@@ -271,14 +271,23 @@ const List: React.FC<ListProps>  = ({id, userToken, list, leaveList}) => {
                     {Object.entries(flaggedUsers).sort((a,b)=>a[1] > b[1] ? 1: a[1] < b[1] ?-1 : 0).map(([studentName, message])=><tr key={studentName}><td>{studentName}</td><td>{message}</td><td><button className='btn btn-primary' onClick={(e)=>helpFlaggedUser(studentName, message)} disabled={requestInProgress}>&times;</button></td></tr>)}
                 </tbody>
             </table>
-            {list.permissionLevel === PermissionLevel.Professor && <button className='btn btn-primary' onClick = {requestFullInfo} disabled={requestInProgress}>Get Full List Info</button>} 
+            {list.permissionLevel === PermissionLevel.Professor && <button className='btn btn-primary m-2' onClick = {requestFullInfo} disabled={requestInProgress}>Get Full List Info</button>} 
             {fullClassInfo !== null && 
-                <table className='table table-dark'>
-                <tbody>
-                    <tr><th>Position</th><th>Name</th></tr>
-                    {fullClassInfo.listUsers.map(({fullName},index)=><tr key={index}><td>{index}</td><td>{fullName}</td></tr>)}
-                </tbody>
-            </table>}
+                <div className='d-flex flex-column flex-md-row'>
+                    <table className='table table-dark flex-grow-1 table-bordered'>
+                        <tbody>
+                            <tr><th>Position</th><th>Name</th></tr>
+                            {fullClassInfo.listUsers.map(({fullName},index)=><tr key={index}><td>{index}</td><td>{fullName}</td></tr>)}
+                        </tbody>
+                    </table>
+                    <table className='table table-dark flex-grow-1 table-bordered'>
+                        <tbody>
+                            <tr><th className='px-1'>Name</th><th className='px-1'>Helped</th><th className='px-1'>Flagged</th><th className='px-1'>Helped Flagged</th><th className='px-1'>Start</th><th className='px-1'>Last Seen</th></tr>
+                            {fullClassInfo.observers.map(({fullName,startTime, helpedStudents,helpedFlaggedStudents,flaggedStudents,timedEventTime},index)=><tr key={index}><td className='px-1'>{fullName}</td><td className='px-1'>{helpedStudents ? helpedStudents: 0}</td><td className='px-1'>{flaggedStudents?flaggedStudents:0}</td><td className='px-1'>{helpedFlaggedStudents?helpedFlaggedStudents:0}</td><td className='px-1'>{new Date(startTime).toLocaleTimeString('en-us',{ hour: 'numeric', minute: 'numeric', hour12: true, timeZone: 'America/Chicago' })}</td><td className='px-1'>{timedEventTime?new Date(timedEventTime).toLocaleTimeString('en-us',{ hour: 'numeric', minute: 'numeric', hour12: true, timeZone: 'America/Chicago' }):'N/A'}</td></tr>)}
+                        </tbody>
+                    </table>
+                </div>
+            }
         </div>
     }
 
