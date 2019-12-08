@@ -173,13 +173,13 @@ const ClassOverviewAdmin: React.FC<ClassOverviewAdminProps>  = ({id, userToken, 
             </div>
             <ul className="nav nav-pills mb-3" id="selection-tab" role="tablist">
                 <li className="nav-item">
-                    <a className="nav-link active text-white" id="selection-add-tab" data-toggle="pill" href="#selection-add" role="tab" aria-controls="selection-add" aria-selected="true">Add Users</a>
+                    <a className="nav-link active text-white" onClick={updateClassInfo} id="selection-add-tab" data-toggle="pill" href="#selection-add" role="tab" aria-controls="selection-add" aria-selected="true">Add Users</a>
                 </li>
                 <li className="nav-item">
-                    <a className="nav-link text-white" id="selection-users-tab" data-toggle="pill" href="#selection-users" role="tab" aria-controls="selection-users" aria-selected="false">Manager Users</a>
+                    <a className="nav-link text-white" onClick={updateClassInfo} id="selection-users-tab" data-toggle="pill" href="#selection-users" role="tab" aria-controls="selection-users" aria-selected="false">Manage Users</a>
                 </li>
                 <li className="nav-item">
-                    <a className="nav-link text-white" id="selection-update-tab" data-toggle="pill" href="#selection-update" role="tab" aria-controls="selection-update" aria-selected="false">Update Class Information</a>
+                    <a className="nav-link text-white" onClick={updateClassInfo} id="selection-update-tab" data-toggle="pill" href="#selection-update" role="tab" aria-controls="selection-update" aria-selected="false">Update Class Information</a>
                 </li>
             </ul>
             <div className="tab-content text-dark">
@@ -219,6 +219,16 @@ const ClassOverviewAdmin: React.FC<ClassOverviewAdminProps>  = ({id, userToken, 
                             <div className='card-body'>
                                 <h4 className='card-title'>Add Multiple Users</h4>
                                 <p className='card-text'>A CSV with two columns, name and email, with no headers</p>
+                                <div className='form-group'>
+                                    <label className='text-left'>
+                                        New Users' Status
+                                        <select className='form-control' value={newMultiplePermissionLevel} onChange={e=>setNewMultiplePermissionLevel(Number(e.target.value))} required >
+                                            <option value={PermissionLevel.Student}>Student</option>
+                                            <option value={PermissionLevel.TA}>TA</option>
+                                            <option value={PermissionLevel.Professor}>Professor/Head TA</option>
+                                        </select>
+                                    </label>
+                                </div>
                                 <form className='m-auto' onSubmit={createMultipleUsers}>
                                     <div className='custom-file mb-2'>
                                         <label className='text-left ml-2 custom-file-label '>
@@ -243,16 +253,6 @@ const ClassOverviewAdmin: React.FC<ClassOverviewAdminProps>  = ({id, userToken, 
                                         <label className='text-left'>
                                             New Name
                                             <input type='text' className='form-control' maxLength={50} value={newClassName} onChange={e=>setNewClassName(e.target.value)} placeholder="New Class Name" required />
-                                        </label>
-                                    </div>
-                                    <div className='form-group'>
-                                        <label className='text-left'>
-                                            Status
-                                            <select className='form-control' value={newMultiplePermissionLevel} onChange={e=>setNewMultiplePermissionLevel(Number(e.target.value))} required >
-                                                <option value={PermissionLevel.Student}>Student</option>
-                                                <option value={PermissionLevel.TA}>TA</option>
-                                                <option value={PermissionLevel.Professor}>Professor/Head TA</option>
-                                            </select>
                                         </label>
                                     </div>
                                     <button type='submit' className='btn btn-primary' disabled={requestInProgress}>Update Class Name</button>
@@ -281,7 +281,7 @@ const ClassOverviewAdmin: React.FC<ClassOverviewAdminProps>  = ({id, userToken, 
                                 <table className='table'>
                                     <tbody>
                                         <tr><th>Name</th><th>Email</th><th>Permission Level</th><th>Remove User</th></tr>
-                                        {classUsers.map(user=><ClassUserManagementRow key = {user.id} user={user} deleteUser={deleteUser} updateUserPermissionLevel={updateUserPermissionLevel}/>)}
+                                        {classUsers.map(user=><ClassUserManagementRow key = {user.id+user.fullName+user.username+user.permissionLevel} user={user} deleteUser={deleteUser} updateUserPermissionLevel={updateUserPermissionLevel}/>)}
                                     </tbody>
                                 </table>
                             </div>
