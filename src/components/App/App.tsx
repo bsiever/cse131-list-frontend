@@ -100,7 +100,7 @@ class App extends React.Component {
     this.setState({currentClass: null})
   }
 
-  leaveList = async (level: PermissionLevel) => {
+  leaveList = async () => {
     this.setState({currentList: null})
   }
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, SetStateAction } from 'react';
 import { PermissionLevel} from '../../utility/types';
+import { websocketUrl } from '../../utility/api';
 
 export interface ListInfo {
     id: string,
@@ -10,7 +11,7 @@ interface ListProps {
     id: string,
     userToken: string,
     list: ListInfo,
-    leaveList(level: PermissionLevel): void
+    leaveList(): void
 }
 export enum WebSocketMessages{
     InitalizeSession = 'initSession',
@@ -60,11 +61,11 @@ const List: React.FC<ListProps>  = ({id, userToken, list, leaveList}) => {
     }, [id, list, userToken]);
 
     useEffect(()=>{
-        const interval = setInterval(async ()=>{
-        if(((socket as WebSocket)) && ((socket as WebSocket).readyState === WebSocket.CLOSED || (socket as WebSocket).readyState === WebSocket.CLOSING) && !leavingList) {
-            console.log("Relaunching websocket");
-            //TODO merge with above code
-            const socket = new WebSocket('wss://dq3o0n1lqf.execute-api.us-east-1.amazonaws.com/dev')
+        async function launchSocket() {
+            console.log('checking');
+        if(!socket || (((socket as WebSocket).readyState === WebSocket.CLOSED || (socket as WebSocket).readyState === WebSocket.CLOSING) && !leavingList)) {
+            console.log('attempting');
+            const socket = new WebSocket(websocketUrl)
             socket.onmessage = async (event: MessageEvent) => {
                 const data = JSON.parse(event.data) as Message;
                 switch(data.messageType) {
@@ -83,12 +84,12 @@ const List: React.FC<ListProps>  = ({id, userToken, list, leaveList}) => {
                     case WebSocketMessages.CloseListSession:
                         window.alert('This session has been closed.')
                         await setLeavingList(true);
-                        leaveList(100000);
+                        leaveList();
                         break;
                     case WebSocketMessages.HelpEvent:
                         window.alert(`You are being helped by ${data.message.helperName}`)
                         await setLeavingList(true);
-                        leaveList(100000);
+                        leaveList();
                         break;
                     case WebSocketMessages.HelperEvent:
                         window.alert(`You are helping ${data.message.studentName}`)
@@ -109,136 +110,68 @@ const List: React.FC<ListProps>  = ({id, userToken, list, leaveList}) => {
             };
             socket.onopen = joinList as any;
             setSocket(socket)
-            return () => {
-                socket.close();
-            }
         }
-    },1000);
-    return ()=> clearInterval(interval);
+    }
+    launchSocket();
+    const interval = setInterval(launchSocket,1000);
+    return ()=> {clearInterval(interval);if(socket){socket.close()}}
     },[socket,joinList, setSocket, id, list.id, leaveList, userToken,leavingList]);
-
-    useEffect(() => {
-        const socket = new WebSocket('wss://dq3o0n1lqf.execute-api.us-east-1.amazonaws.com/dev')
-        socket.onmessage = async (event: MessageEvent) => {
-            const data = JSON.parse(event.data) as Message;
-            // if(data.message.version <= version) {
-            //     return
-            // } else {
-            //     setVersion(data.message.version)
-            // }
-            switch(data.messageType) {
-                case WebSocketMessages.InitalizeSession:
-                    setRequestInProgress(false)
-                    if(data.message.observer) {
-                        setListTotal(data.message.totalNumber)      
-                        setFlaggedUsers(data.message.flaggedUsers)                  
-                    } else {
-                        setPosition(data.message.index)
-                    }
-                    break;
-                case WebSocketMessages.SetPosition:
-                    setPosition(data.message.index)
-                    break;
-                case WebSocketMessages.CloseListSession:
-                    await setLeavingList(true);
-                    leaveList(100000);
-                    break;
-                case WebSocketMessages.HelpEvent:
-                    window.alert(`You are being helped by ${data.message.helperName}`)
-                    await setLeavingList(true);
-                    leaveList(100000);
-                    break;
-                case WebSocketMessages.HelperEvent:
-                    window.alert(`You are helping ${data.message.studentName}`)
-                    setLastHelped(data.message.studentName)
-                    break;
-                case WebSocketMessages.UpdateListStatus:
-                    setListTotal(data.message.totalNumber)
-                    setFlaggedUsers(data.message.flaggedUsers)
-                    break;
-                case WebSocketMessages.FlagRecorded:
-                    setLastHelped('')
-                    setFlagUserMessage('')
-                    break;
-                case WebSocketMessages.FullInfo:
-                    setFullClassInfo({listUsers: data.message.users, observers: data.message.tas})
-                    break;
-            }
-        };
-        socket.onopen = joinList as any;
-        setSocket(socket)
-        return () => {
-            socket.close();
-        }   
-    }, [joinList, setSocket, id, list.id, leaveList, userToken]);
    
     
+    const sendWebsocketMessage = (action: string, data:object) => {
+        if((socket as WebSocket).readyState === WebSocket.OPEN) {
+            (socket as WebSocket).send(JSON.stringify({action,data}));
+        }
+    }
 
     const helpNextUser = async ()=> {
-        if(Date.now() - 5000 > lastHelpedUserTime) {
+        if(Date.now() - 1000 > lastHelpedUserTime) {
             lastHelpedUserTime = Date.now();
-            (socket as WebSocket).send(JSON.stringify({
-                action: 'helpNextUser',
-                data: {
+            sendWebsocketMessage('helpNextUser',{
                     id,
                     userToken,
                     list_id: list.id
-                }
-            }))
+                })
         }
     }
 
     const markFlaggedUser = async (e: { preventDefault: () => void; }) =>{
         e.preventDefault();
-        (socket as WebSocket).send(JSON.stringify({
-            action: 'flagUser',
-            data: {
+        sendWebsocketMessage('flagUser',{
                 id,
                 userToken,
                 list_id: list.id,
                 studentName: lastHelped,
                 message: flagUserMessage
-            }
-        }))
+            })
     }
 
     const helpFlaggedUser = async (studentName: string, message: string) =>{
-        (socket as WebSocket).send(JSON.stringify({
-            action: 'helpFlaggedUser',
-            data: {
+        sendWebsocketMessage('helpFlaggedUser',{
                 id,
                 userToken,
                 list_id: list.id,
                 studentName,
                 message
-            }
-        }))
+        })
     }
 
     const requestFullInfo = async () => {
-        (socket as WebSocket).send(JSON.stringify({
-            action: 'getFullOverview',
-            data: {
+        sendWebsocketMessage('getFullOverview',{
                 id,
                 userToken,
                 list_id: list.id
-            }
-        }))
+        })
     }
 
     const chooseToLeaveList = async () => {
         await setLeavingList(true);
-        if((socket as WebSocket).readyState === WebSocket.OPEN) {
-            (socket as WebSocket).send(JSON.stringify({
-                action: 'leaveList',
-                data: {
+        sendWebsocketMessage('leaveList',{
                     list_id: list.id,
                     id,
                     userToken
-                }
-            }));
-        }
-        leaveList(1000)
+            });
+        leaveList()
     }
     let mainWindow;
     if(list.permissionLevel === PermissionLevel.Student) {
@@ -294,7 +227,7 @@ const List: React.FC<ListProps>  = ({id, userToken, list, leaveList}) => {
     return (
         <div className='align-items-center align-middle my-auto'>
             <div className='d-flex m-3 justify-content-center align-items-center'>
-                <button className= 'btn btn-primary m-3' onClick = {()=>leaveList(list.permissionLevel)}>Back</button>
+                <button className= 'btn btn-primary m-3' onClick = {()=>leaveList()}>Back</button>
                 <button className= 'btn btn-danger m-3' onClick = {()=>chooseToLeaveList()}>Leave</button>
                 <h1>{list.listName}</h1>
             </div>

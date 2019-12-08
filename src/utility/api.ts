@@ -2,6 +2,8 @@ import {ErrorTypes} from './types'
 
 const prefixUrl = 'https://rfnyp32d3i.execute-api.us-east-1.amazonaws.com/dev/'
 
+export const websocketUrl = 'wss://dq3o0n1lqf.execute-api.us-east-1.amazonaws.com/dev';
+
 export interface APIResponse {
     success: boolean,
     data?: object,
@@ -29,6 +31,4 @@ export const makeRequest = async (name: string, data: any, failureAllowed: boole
     } catch(e) {
         return {success: false, errorCode: ErrorTypes.General}
     }
-    
-
 }
