@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { makeRequest, APIResponse } from '../../utility/api';
 import { PermissionLevel, ClassObj,  SessionObj } from '../../utility/types';
 import ClassOverviewAdmin from './ClassOverviewAdmin';
-import { ListInfo } from '../List/List';
+import List, { ListInfo } from '../List/List';
+
 interface ClassOverviewProps {
     id: string,
     userToken: string,
@@ -10,12 +11,13 @@ interface ClassOverviewProps {
     className: string,
     exitClass(): void,
     updateCurrentClass(classItem: ClassObj): void,
-    selectList(obj: ListInfo): void
+    selectList(obj: ListInfo): void,
+    chosenSession: null | SessionObj,
+    setSession(newSession: SessionObj | null): void
 }
 
-const ClassOverview: React.FC<ClassOverviewProps>  = ({id, userToken, classId, className, exitClass,updateCurrentClass, selectList}) => {
+const ClassOverview: React.FC<ClassOverviewProps>  = ({id, userToken, classId, className, exitClass,updateCurrentClass, selectList,chosenSession,setSession}) => {
     const [sessions, setSessions] = useState([] as SessionObj[]);
-    const [chosenSession, setChosenSession] = useState(null as null | SessionObj)
     const [newName, setNewName] = useState('');
     const [requestInProgress, setRequestInProgress] = useState(false);
     const [permissionLevel, setPermissionLevel] = useState(PermissionLevel.Student);
@@ -47,11 +49,11 @@ const ClassOverview: React.FC<ClassOverviewProps>  = ({id, userToken, classId, c
 
     const selectSession = async (e: { preventDefault: () => void; }, session: SessionObj) => {
         if(e) e.preventDefault();
-        await setChosenSession(session)
+        await setSession(session)
     }
 
     const goBack = async () => {
-        setChosenSession(null);
+        setSession(null);
     }
 
     const deleteSession = async (e: React.MouseEvent<HTMLButtonElement, MouseEvent>,sessionId: string) => {
@@ -97,11 +99,16 @@ const ClassOverview: React.FC<ClassOverviewProps>  = ({id, userToken, classId, c
         </React.Fragment>
     } else {
         let listList = []
-        for (const [id, listName] of Object.entries(chosenSession.lists)) {
-            listList.push(
-                <div key={id} className='class_option align-items-center flex-fill col-md-5 rounded-lg bg-primary text-center p-3 pt-5 pb-5 mx-auto mb-3' onClick = {()=>selectList({id,permissionLevel,listName})} >
+        for (const [list_id, listName] of Object.entries(chosenSession.lists)) {
+            if(permissionLevel >= PermissionLevel.TA) {
+                listList.push(
+                    <List selectList={selectList} miniView={true} id={id} userToken = {userToken} list = {{id:list_id,listName,permissionLevel}} leaveList  = {()=>{}}>
+                    </List>)
+            } else {
+                listList.push(<div key={list_id} className='class_option align-items-center flex-fill col-md-5 rounded-lg bg-primary text-center p-3 pt-5 pb-5 mx-auto mb-3' onClick = {()=>selectList({id:list_id,permissionLevel,listName})} >
                     <h3>{listName}</h3>
                 </div>)
+            }
         }
         mainResult = <React.Fragment>
             <h4>Avaliable Lists</h4>

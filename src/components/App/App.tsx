@@ -1,5 +1,5 @@
 import React from 'react';
-import {ClassObj, PermissionLevel} from '../../utility/types'
+import {ClassObj, SessionObj} from '../../utility/types'
 import ClassSelector from '../ClassSelector/ClassSelector';
 import LoginWrapper from '../Login/LoginWrapper';
 import AdminManagement from '../AdminManagement/AdminManagement';
@@ -42,7 +42,8 @@ class App extends React.Component {
     classes: [] as ClassObj[],
     currentClass: null as ClassObj | null,
     currentList: null as ListInfo | null,
-    admin: false as boolean
+    admin: false as boolean,
+    chosenSession: null as null | SessionObj
   }
 
   /*State Hooks*/
@@ -77,6 +78,10 @@ class App extends React.Component {
     this.setState({id,username, name,userToken,tokenTime: Date.now(),classes, admin})
   }
 
+  setChosenSession = (chosenSession: SessionObj) => {
+    this.setState({chosenSession});
+  }
+  
   selectClass = (given_class: ClassObj) => {
     this.setState({currentClass: given_class})
   }
@@ -97,7 +102,7 @@ class App extends React.Component {
   
   exitClass = async () => {
     await this.refreshUserInfo();
-    this.setState({currentClass: null})
+    this.setState({currentClass: null, chosenSession: null})
   }
 
   leaveList = async () => {
@@ -142,9 +147,9 @@ class App extends React.Component {
         </div>}
       </div>
     } else if(this.state.currentList === null) {
-      mainItem = <ClassOverview id={this.state.id} userToken = {this.state.userToken} className = {this.state.currentClass.className} classId = {this.state.currentClass.id} exitClass={this.exitClass} updateCurrentClass={this.selectClass} selectList={this.selectList}/>
+      mainItem = <ClassOverview setSession={this.setChosenSession} chosenSession={this.state.chosenSession} id={this.state.id} userToken = {this.state.userToken} className = {this.state.currentClass.className} classId = {this.state.currentClass.id} exitClass={this.exitClass} updateCurrentClass={this.selectClass} selectList={this.selectList}/>
     } else {
-      mainItem = <List id={this.state.id} userToken = {this.state.userToken} list = {this.state.currentList} leaveList  = {this.leaveList} />
+      mainItem = <List selectList={this.selectList} miniView={false} id={this.state.id} userToken = {this.state.userToken} list = {this.state.currentList} leaveList  = {this.leaveList} />
     }
     return (
       <div className="bg-dark text-white d-flex flex-column text-center min-vh-100">

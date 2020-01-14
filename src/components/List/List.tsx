@@ -11,7 +11,9 @@ interface ListProps {
     id: string,
     userToken: string,
     list: ListInfo,
-    leaveList(): void
+    leaveList(): void,
+    miniView: boolean,
+    selectList(obj: ListInfo): void
 }
 export enum WebSocketMessages{
     InitalizeSession = 'initSession',
@@ -37,7 +39,7 @@ interface FullInfo {
 
 var lastHelpedUserTime = 0;
 
-const List: React.FC<ListProps>  = ({id, userToken, list, leaveList}) => {
+const List: React.FC<ListProps>  = ({id, userToken, list, leaveList, miniView,selectList}) => {
     
     const [socket, setSocket] = useState(null)  as [null | WebSocket, React.Dispatch<SetStateAction<null | WebSocket>>]
     const [position, setPosition] = useState(-1);
@@ -62,9 +64,8 @@ const List: React.FC<ListProps>  = ({id, userToken, list, leaveList}) => {
 
     useEffect(()=>{
         async function launchSocket() {
-            console.log('checking');
         if(!socket || (((socket as WebSocket).readyState === WebSocket.CLOSED || (socket as WebSocket).readyState === WebSocket.CLOSING) && !leavingList)) {
-            console.log('attempting');
+            console.log('Attempting Reconnection');
             const socket = new WebSocket(websocketUrl)
             socket.onmessage = async (event: MessageEvent) => {
                 const data = JSON.parse(event.data) as Message;
@@ -82,9 +83,11 @@ const List: React.FC<ListProps>  = ({id, userToken, list, leaveList}) => {
                         setPosition(data.message.index)
                         break;
                     case WebSocketMessages.CloseListSession:
-                        window.alert('This session has been closed.')
                         await setLeavingList(true);
-                        leaveList();
+                        if(!miniView) {
+                            window.alert('This session has been closed.')
+                            leaveList();
+                        }
                         break;
                     case WebSocketMessages.HelpEvent:
                         window.alert(`You are being helped by ${data.message.helperName}`)
@@ -177,6 +180,11 @@ const List: React.FC<ListProps>  = ({id, userToken, list, leaveList}) => {
     if(list.permissionLevel === PermissionLevel.Student) {
         mainWindow = <div>
             <h2>Your Current Position: {position !== -1 ? position : 'Loading'}</h2>
+        </div>
+    } else if(miniView) {
+        return <div key={id} className='class_option align-items-center flex-fill col-md-5 rounded-lg bg-primary text-center p-3 pt-5 pb-5 mx-auto mb-3' onClick = {()=>selectList(list)} >
+                <h3>{list.listName}</h3>
+                <p className='m-0'>List Count: {listTotal !== -1 ? listTotal : 'Loading'}</p>
         </div>
     } else {
         mainWindow = <div>
