@@ -2,6 +2,7 @@ import React, { useState, SetStateAction, RefObject, useRef } from 'react';
 import { makeRequest, APIResponse } from '../../utility/api';
 import { User, PermissionLevel, ClassObj } from '../../utility/types';
 import ClassUserManagementRow from './ClassUserManagementRow';
+import ClassScheduleTab from './ClassScheduleTab';
 
 const parse = require('csv-parse');
 
@@ -27,6 +28,8 @@ const ClassOverviewAdmin: React.FC<ClassOverviewAdminProps>  = ({id, userToken, 
     const [newMultiplePermissionLevel, setNewMultiplePermissionLevel] = useState(PermissionLevel.Student)
     const [multiAddResult, setMultiAddResult] = useState('');
     const fileRef = useRef() as RefObject<HTMLInputElement>;
+
+
 
     const loadClassInformation = async (e: { preventDefault: () => void; }) => {
         if(e) e.preventDefault();
@@ -164,6 +167,7 @@ const ClassOverviewAdmin: React.FC<ClassOverviewAdminProps>  = ({id, userToken, 
         }
         setRequestInProgress(false)
     }
+
     
     return (
         <div className='align-items-center align-middle my-auto col-10 text-dark m-auto bg-secondary pb-2 rounded-lg'>
@@ -180,6 +184,9 @@ const ClassOverviewAdmin: React.FC<ClassOverviewAdminProps>  = ({id, userToken, 
                 </li>
                 <li className="nav-item">
                     <a className="nav-link text-white" onClick={updateClassInfo} id="selection-update-tab" data-toggle="pill" href="#selection-update" role="tab" aria-controls="selection-update" aria-selected="false">Update Class Information</a>
+                </li>
+                <li className="nav-item">
+                    <a className="nav-link text-white" onClick={updateClassInfo} id="selection-schedule-tab" data-toggle="pill" href="#selection-schedule" role="tab" aria-controls="selection-schedule" aria-selected="false">Manage Schedule</a>
                 </li>
             </ul>
             <div className="tab-content text-dark">
@@ -284,6 +291,17 @@ const ClassOverviewAdmin: React.FC<ClassOverviewAdminProps>  = ({id, userToken, 
                                         {classUsers.map(user=><ClassUserManagementRow key = {user.id+user.fullName+user.username+user.permissionLevel} user={user} deleteUser={deleteUser} updateUserPermissionLevel={updateUserPermissionLevel}/>)}
                                     </tbody>
                                 </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div className="tab-pane fade" id="selection-schedule" role="tabpanel" aria-labelledby="selection-schedule-tab">
+                    
+                    <div className='card-deck'>
+                        <div className='card border-dark'>
+                            <div className='card-body'>
+                                <h4 className='card-title'>Manage Scheduled Sessions</h4>
+                                <ClassScheduleTab id={id} userToken={userToken} classId={classId}/>
                             </div>
                         </div>
                     </div>
