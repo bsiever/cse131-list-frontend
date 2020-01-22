@@ -40,7 +40,7 @@ const ClassSelector: React.FC<ClassSelectorProps> = ({classes,selectClass,id,use
     }
     return (
         <div>
-            <h1>Avaliable Classes</h1>
+            <h1>Available Classes</h1>
             <form className='form-inline justify-content-center m-2' onSubmit={joinClass}>
                 <div className='form-group'>
                     <label className='text-left mr-3'>

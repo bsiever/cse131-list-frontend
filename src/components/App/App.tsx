@@ -102,15 +102,11 @@ class App extends React.Component {
   
   exitClass = async () => {
     await this.refreshUserInfo();
-    this.setState({currentClass: null, chosenSession: null})
+    this.setState({currentClass: null, chosenSession: null, currentList: null})
   }
 
   leaveList = async () => {
     this.setState({currentList: null})
-  }
-
-  resetToHome = async () => {
-    await this.setState({currentClass: null, currentSession: null})
   }
 
   logout = async (inactivity: boolean) => {
@@ -153,7 +149,7 @@ class App extends React.Component {
     }
     return (
       <div className="bg-dark text-white d-flex flex-column text-center min-vh-100">
-        <GlobalNav id={this.state.id} userToken = {this.state.userToken as string} username={this.state.username} fullName={this.state.name} refreshUserInfo={this.refreshUserInfo} goHome={this.resetToHome} logout={this.logout}/>
+        <GlobalNav id={this.state.id} userToken = {this.state.userToken as string} username={this.state.username} fullName={this.state.name} refreshUserInfo={this.refreshUserInfo} goHome={this.exitClass} logout={this.logout}/>
         {/* TODO breadcrumbs */}
         <div className='flex-column flex-wrap'>
           

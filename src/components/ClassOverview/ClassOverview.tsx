@@ -58,6 +58,7 @@ const ClassOverview: React.FC<ClassOverviewProps>  = ({id, userToken, classId, c
 
     const deleteSession = async (e: React.MouseEvent<HTMLButtonElement, MouseEvent>,sessionId: string) => {
         e.stopPropagation();
+        if(!window.confirm("Do you want to close the session?")) return;  
         await setRequestInProgress(true)
         await makeRequest('closeSession', {id, userToken, classId, sessionId});
         await updateClassSessionsAndInfo();
@@ -85,11 +86,11 @@ const ClassOverview: React.FC<ClassOverviewProps>  = ({id, userToken, classId, c
                 </div>)
         }
         if(sessionList.length === 0) {
-            sessionList = [<h2 key='singletonSession'>There are not currently any sessions avaliable, please click the refresh button to retry.</h2>]
+            sessionList = [<h2 key='singletonSession'>There are not currently any sessions available, please click the refresh button to retry.</h2>]
         }
         mainResult = <React.Fragment>
             <div className ='d-flex m-3 justify-content-center align-content center'>
-                <h4>Avaliable Sessions</h4>
+                <h4>Available Sessions</h4>
                 <button className='btn btn-primary ml-3' onClick={updateClassSessionsAndInfo}>Refresh</button>
             </div>
             {createSessionForm}
@@ -111,7 +112,7 @@ const ClassOverview: React.FC<ClassOverviewProps>  = ({id, userToken, classId, c
             }
         }
         mainResult = <React.Fragment>
-            <h4>Avaliable Lists</h4>
+            <h4>Available Lists</h4>
             <button className='btn btn-primary mb-3' onClick={goBack}>Back to Sessions</button>
             <div className='container d-flex flex-wrap'>
                 {listList}

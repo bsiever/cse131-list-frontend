@@ -63,25 +63,13 @@ const ClassScheduleTab: React.FC<ClassScheduleTabProps>  = ({id, userToken, clas
     }
 
     return (<div>
-            <h4 className='card-title'>Add Scheduled Event</h4>
-            <form onSubmit={createScheduledEvent} className='form-inline'> 
-                <div className='form-group mx-auto my-1'>
-                    <input type='text' className='form-control' maxLength={50} value={newSessionName} onChange={e=>setNewSessionName(e.target.value)} placeholder="Session Name" required />
-                </div>
-                <div className='form-group mx-auto my-1'>
-                    <select className='form-control' value={newStartDay} onChange={e=>setNewStartDay(Number(e.target.value))}>
-                        <option value={0}>Sunday</option>
-                        <option value={1}>Monday</option>
-                        <option value={2}>Tuesday</option>
-                        <option value={3}>Wednesday</option>
-                        <option value={4}>Thursday</option>
-                        <option value={5}>Friday</option>
-                        <option value={6}>Saturday</option>
-                    </select>
-                </div>
-                <input className='form-control mx-auto my-1'  type='number' min='0' max='23' value={newStartHour} onChange={e=>setNewStartHour(Number(e.target.value))}/>
-                <input className='form-control mx-auto my-1' type='number' min='0' max='59' value={newStartMinute} onChange={e=>setNewStartMinute(Number(e.target.value))}/>
-                <select className='form-control mx-auto my-1' value={newEndDay} onChange={e=>setNewEndDay(Number(e.target.value))}>
+        <h4 className='card-title'>Add Scheduled Event</h4>
+        <form onSubmit={createScheduledEvent} className='form-inline'> 
+            <div className='form-group mx-auto my-1'>
+                <input type='text' className='form-control' maxLength={50} value={newSessionName} onChange={e=>setNewSessionName(e.target.value)} placeholder="Session Name" required />
+            </div>
+            <div className='form-group mx-auto my-1'>
+                <select className='form-control' value={newStartDay} onChange={e=>setNewStartDay(Number(e.target.value))}>
                     <option value={0}>Sunday</option>
                     <option value={1}>Monday</option>
                     <option value={2}>Tuesday</option>
@@ -90,10 +78,23 @@ const ClassScheduleTab: React.FC<ClassScheduleTabProps>  = ({id, userToken, clas
                     <option value={5}>Friday</option>
                     <option value={6}>Saturday</option>
                 </select>
-                <input className='form-control mx-auto my-1' type='number' min='0' max='23' value={newEndHour} onChange={e=>setNewEndHour(Number(e.target.value))}/>
-                <input className='form-control mx-auto my-1' type='number' min='0' max='59' value={newEndMinute} onChange={e=>setNewEndMinute(Number(e.target.value))}/>
-                <button type='submit' className='btn btn-success mx-auto my-1' disabled={requestInProgress}>Add Event</button>
-            </form>
+            </div>
+            <input className='form-control mx-auto my-1'  type='number' min='0' max='23' value={newStartHour} onChange={e=>setNewStartHour(Number(e.target.value))}/>
+            <input className='form-control mx-auto my-1' type='number' min='0' max='59' value={newStartMinute} onChange={e=>setNewStartMinute(Number(e.target.value))}/>
+            <select className='form-control mx-auto my-1' value={newEndDay} onChange={e=>setNewEndDay(Number(e.target.value))}>
+                <option value={0}>Sunday</option>
+                <option value={1}>Monday</option>
+                <option value={2}>Tuesday</option>
+                <option value={3}>Wednesday</option>
+                <option value={4}>Thursday</option>
+                <option value={5}>Friday</option>
+                <option value={6}>Saturday</option>
+            </select>
+            <input className='form-control mx-auto my-1' type='number' min='0' max='23' value={newEndHour} onChange={e=>setNewEndHour(Number(e.target.value))}/>
+            <input className='form-control mx-auto my-1' type='number' min='0' max='59' value={newEndMinute} onChange={e=>setNewEndMinute(Number(e.target.value))}/>
+            <button type='submit' className='btn btn-success mx-auto my-1' disabled={requestInProgress}>Add Event</button>
+        </form>
+        <p>Scheduled times are run every five minutes</p>
         <table className='table'>
             <tbody>
                 <tr><th>Session Name</th><th>Start Day</th><th>Start Hour</th><th>Start Minute</th><th>End Day</th><th>End Hour</th><th>End Minute</th><th>Update</th><th>Delete</th></tr>

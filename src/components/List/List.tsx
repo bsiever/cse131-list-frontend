@@ -50,6 +50,7 @@ const List: React.FC<ListProps>  = ({id, userToken, list, leaveList, miniView,se
     const [flaggedUsers, setFlaggedUsers] = useState({} as {[s: string]: string})
     const [fullClassInfo, setFullClassInfo] = useState(null as null|FullInfo)
     const [leavingList, setLeavingList] = useState(false);
+    const [estimatedWaitTime, setEstimatedWaitTime] = useState(0);
 
     const joinList = useCallback((e: Event): any => {
         (e.target as WebSocket).send(JSON.stringify({
@@ -78,12 +79,14 @@ const List: React.FC<ListProps>  = ({id, userToken, list, leaveList, miniView,se
                         } else {
                             setPosition(data.message.index)
                         }
+                        setEstimatedWaitTime(data.message.estimatedWaitTime)
                         break;
                     case WebSocketMessages.SetPosition:
                         setPosition(data.message.index)
+                        setEstimatedWaitTime(data.message.estimatedWaitTime)
                         break;
                     case WebSocketMessages.CloseListSession:
-                        await setLeavingList(true);
+                        setLeavingList(true);
                         if(!miniView) {
                             window.alert('This session has been closed.')
                             leaveList();
@@ -91,7 +94,7 @@ const List: React.FC<ListProps>  = ({id, userToken, list, leaveList, miniView,se
                         break;
                     case WebSocketMessages.HelpEvent:
                         window.alert(`You are being helped by ${data.message.helperName}`)
-                        await setLeavingList(true);
+                        setLeavingList(true);
                         leaveList();
                         break;
                     case WebSocketMessages.HelperEvent:
@@ -101,6 +104,7 @@ const List: React.FC<ListProps>  = ({id, userToken, list, leaveList, miniView,se
                     case WebSocketMessages.UpdateListStatus:
                         setListTotal(data.message.totalNumber)
                         setFlaggedUsers(data.message.flaggedUsers)
+                        setEstimatedWaitTime(data.message.estimatedWaitTime)
                         break;
                     case WebSocketMessages.FlagRecorded:
                         setLastHelped('')
@@ -177,18 +181,22 @@ const List: React.FC<ListProps>  = ({id, userToken, list, leaveList, miniView,se
         leaveList()
     }
     let mainWindow;
+    let estimatedWaitP = (estimatedWaitTime!==0 && position !==0 && listTotal!==0 && estimatedWaitTime >= 60000)?<p>Estimated Wait: {Math.floor(estimatedWaitTime/60000)} minute(s)</p>:<p>Expected Wait: None</p>;
     if(list.permissionLevel === PermissionLevel.Student) {
         mainWindow = <div>
             <h2>Your Current Position: {position !== -1 ? position : 'Loading'}</h2>
+            {estimatedWaitP}
         </div>
     } else if(miniView) {
         return <div key={id} className='class_option align-items-center flex-fill col-md-5 rounded-lg bg-primary text-center p-3 pt-5 pb-5 mx-auto mb-3' onClick = {()=>selectList(list)} >
                 <h3>{list.listName}</h3>
                 <p className='m-0'>List Count: {listTotal !== -1 ? listTotal : 'Loading'}</p>
+                {estimatedWaitP}
         </div>
     } else {
         mainWindow = <div>
             <h2>Total List Members: {listTotal !== -1 ? listTotal : 'Loading'}</h2>
+            {estimatedWaitP}
             <button className='btn btn-primary' onClick = {helpNextUser} disabled={requestInProgress}>Help Next Person</button>
             <form className='form-inline justify-content-center m-2' onSubmit={markFlaggedUser}>
                 <div className='form-group'>
