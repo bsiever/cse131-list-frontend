@@ -54,6 +54,7 @@ const List: React.FC<ListProps>  = ({id, userToken, list, leaveList, miniView,se
     const [estimatedWaitTime, setEstimatedWaitTime] = useState(0);
     const [helpUserTimer, setHelpUserTime] = useState(null) as [null |number, React.Dispatch<SetStateAction<null | number>>];
 
+    
     const joinList = useCallback((e: Event): any => {
         (e.target as WebSocket).send(JSON.stringify({
             action: 'joinList',
@@ -66,6 +67,14 @@ const List: React.FC<ListProps>  = ({id, userToken, list, leaveList, miniView,se
     }, [id, list, userToken]);
 
     useEffect(()=>{
+        const notifyTimeOut = () => {
+            setHelpUserTime(null);
+            if(listTotal >0) {
+                //Notify TA that they should probably move on
+                window.alert("You've been helping a student for over 10 minutes!");
+            }
+        }
+        
         async function launchSocket() {
         if(!socket || (((socket as WebSocket).readyState === WebSocket.CLOSED || (socket as WebSocket).readyState === WebSocket.CLOSING) && !leavingList)) {
             console.log('Attempting Reconnection');
@@ -126,20 +135,12 @@ const List: React.FC<ListProps>  = ({id, userToken, list, leaveList, miniView,se
     launchSocket();
     const interval = setInterval(launchSocket,1000);
     return ()=> {clearInterval(interval);if(socket){socket.close()}}
-    },[socket,joinList, setSocket, id, list.id, leaveList, userToken,leavingList]);
+    },[socket,joinList, setSocket, id, list.id, leaveList, userToken,leavingList,helpUserTimer,miniView,setHelpUserTime,listTotal]);
    
     
     const sendWebsocketMessage = (action: string, data:object) => {
         if((socket as WebSocket).readyState === WebSocket.OPEN) {
             (socket as WebSocket).send(JSON.stringify({action,data}));
-        }
-    }
-
-    const notifyTimeOut = () => {
-        setHelpUserTime(null);
-        if(listTotal >0) {
-            //Notify TA that they should probably move on
-            window.alert("You've been helping a student for over 10 minutes!");
         }
     }
 

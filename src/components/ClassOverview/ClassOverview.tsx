@@ -21,7 +21,8 @@ const ClassOverview: React.FC<ClassOverviewProps>  = ({id, userToken, classId, c
     const [newName, setNewName] = useState('');
     const [requestInProgress, setRequestInProgress] = useState(false);
     const [permissionLevel, setPermissionLevel] = useState(PermissionLevel.Student);
-    
+    const [fullView, setFullView] = useState(false);
+
     const updateClassSessionsAndInfo = useCallback(async () => {
         let response: APIResponse = await makeRequest('getClassInfo', {id, userToken, classId});
         console.log(response)
@@ -65,8 +66,8 @@ const ClassOverview: React.FC<ClassOverviewProps>  = ({id, userToken, classId, c
         setRequestInProgress(false)
     }
 
-    let mainResult
-    if(chosenSession === null) {
+    let mainResult;
+    if(chosenSession === null && !fullView) {
         const createSessionForm = permissionLevel === PermissionLevel.Professor ?
         <form className='form-inline justify-content-center m-2' onSubmit={createSession}>
             <div className='form-group'>
@@ -99,21 +100,26 @@ const ClassOverview: React.FC<ClassOverviewProps>  = ({id, userToken, classId, c
             </div>
         </React.Fragment>
     } else {
+        let sessionsToProcess = fullView ? sessions : [chosenSession];
         let listList = []
-        for (const [list_id, listName] of Object.entries(chosenSession.lists)) {
-            if(permissionLevel >= PermissionLevel.TA) {
-                listList.push(
-                    <List sessionName={chosenSession.sessionName} selectList={selectList} miniView={true} id={id} userToken = {userToken} list = {{id:list_id,listName,permissionLevel}} leaveList  = {()=>{}}>
-                    </List>)
-            } else {
-                listList.push(<div key={list_id} className='class_option align-items-center flex-fill col-md-5 rounded-lg bg-primary text-center p-3 pt-5 pb-5 mx-auto mb-3' onClick = {()=>selectList({id:list_id,permissionLevel,listName})} >
-                    <h3>{listName}</h3>
-                </div>)
+        for(let givenSession of sessionsToProcess) {
+            if(givenSession !== null){
+                for (const [list_id, listName] of Object.entries(givenSession.lists)) {
+                    if(permissionLevel >= PermissionLevel.TA) {
+                        listList.push(
+                            <List sessionName={givenSession.sessionName} selectList={selectList} miniView={true} id={id} userToken = {userToken} list = {{id:list_id,listName,permissionLevel}} leaveList  = {()=>{}}>
+                            </List>)
+                    } else {
+                        listList.push(<div key={list_id} className='class_option align-items-center flex-fill col-md-5 rounded-lg bg-primary text-center p-3 pt-5 pb-5 mx-auto mb-3' onClick = {()=>selectList({id:list_id,permissionLevel,listName})} >
+                            <h3>{listName}</h3>
+                        </div>)
+                    }
+                }
             }
         }
         mainResult = <React.Fragment>
             <h4>Available Lists</h4>
-            <button className='btn btn-primary mb-3' onClick={goBack}>Back to Sessions</button>
+            {!fullView ? <button className='btn btn-primary mb-3' onClick={goBack}>Back to Sessions</button>:null}
             <div className='container d-flex flex-wrap'>
                 {listList}
             </div>
@@ -122,7 +128,9 @@ const ClassOverview: React.FC<ClassOverviewProps>  = ({id, userToken, classId, c
     
     return (
         <div className='align-items-center align-middle my-auto'>
-            <h1>{className}</h1>
+            <h1>{className}
+                {permissionLevel === PermissionLevel.Professor && chosenSession === null ? <button className={'btn my-a ml-3 '+(fullView?'btn-success':'btn-danger')} onClick={()=>setFullView(!fullView)}>Toggle Full View</button>:null}
+            </h1>
             {mainResult}
             {permissionLevel === PermissionLevel.Professor ? <ClassOverviewAdmin id={id} userToken = {userToken} classId = {classId} exitClass={exitClass} updateCurrentClass={updateCurrentClass}/>: null}
         </div>
