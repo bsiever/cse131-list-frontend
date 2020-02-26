@@ -13,7 +13,8 @@ interface ListProps {
     list: ListInfo,
     leaveList(): void,
     miniView: boolean,
-    selectList(obj: ListInfo): void
+    selectList(obj: ListInfo): void,
+    sessionName: string
 }
 export enum WebSocketMessages{
     InitalizeSession = 'initSession',
@@ -39,7 +40,7 @@ interface FullInfo {
 
 var lastHelpedUserTime = 0;
 
-const List: React.FC<ListProps>  = ({id, userToken, list, leaveList, miniView,selectList}) => {
+const List: React.FC<ListProps>  = ({id, userToken, list, leaveList, miniView,selectList,sessionName}) => {
     
     const [socket, setSocket] = useState(null)  as [null | WebSocket, React.Dispatch<SetStateAction<null | WebSocket>>]
     const [position, setPosition] = useState(-1);
@@ -51,6 +52,7 @@ const List: React.FC<ListProps>  = ({id, userToken, list, leaveList, miniView,se
     const [fullClassInfo, setFullClassInfo] = useState(null as null|FullInfo)
     const [leavingList, setLeavingList] = useState(false);
     const [estimatedWaitTime, setEstimatedWaitTime] = useState(0);
+    const [helpUserTimer, setHelpUserTime] = useState(null) as [null |number, React.Dispatch<SetStateAction<null | number>>];
 
     const joinList = useCallback((e: Event): any => {
         (e.target as WebSocket).send(JSON.stringify({
@@ -98,6 +100,8 @@ const List: React.FC<ListProps>  = ({id, userToken, list, leaveList, miniView,se
                         leaveList();
                         break;
                     case WebSocketMessages.HelperEvent:
+                        clearTimeout(helpUserTimer === null?undefined:helpUserTimer);
+                        setHelpUserTime(window.setTimeout(notifyTimeOut,10*60*1000));
                         window.alert(`You are helping ${data.message.studentName}`)
                         setLastHelped(data.message.studentName)
                         break;
@@ -131,8 +135,18 @@ const List: React.FC<ListProps>  = ({id, userToken, list, leaveList, miniView,se
         }
     }
 
-    const helpNextUser = async ()=> {
+    const notifyTimeOut = () => {
+        setHelpUserTime(null);
+        if(listTotal >0) {
+            //Notify TA that they should probably move on
+            window.alert("You've been helping a student for over 10 minutes!");
+        }
+    }
+
+    const helpNextUser = ()=> {
         if(Date.now() - 1000 > lastHelpedUserTime) {
+            clearTimeout(helpUserTimer === null?undefined:helpUserTimer);
+            setHelpUserTime(null);
             lastHelpedUserTime = Date.now();
             sendWebsocketMessage('helpNextUser',{
                     id,
@@ -154,6 +168,8 @@ const List: React.FC<ListProps>  = ({id, userToken, list, leaveList, miniView,se
     }
 
     const helpFlaggedUser = async (studentName: string, message: string) =>{
+        clearTimeout(helpUserTimer === null?undefined:helpUserTimer);
+        setHelpUserTime(null);
         sendWebsocketMessage('helpFlaggedUser',{
                 id,
                 userToken,
@@ -189,7 +205,7 @@ const List: React.FC<ListProps>  = ({id, userToken, list, leaveList, miniView,se
         </div>
     } else if(miniView) {
         return <div key={id} className='class_option align-items-center flex-fill col-md-5 rounded-lg bg-primary text-center p-3 pt-5 pb-5 mx-auto mb-3' onClick = {()=>selectList(list)} >
-                <h3>{list.listName}</h3>
+                <h3>{sessionName+": "+list.listName}</h3>
                 <p className='m-0'>List Count: {listTotal !== -1 ? listTotal : 'Loading'}</p>
                 {estimatedWaitP}
         </div>
@@ -245,7 +261,7 @@ const List: React.FC<ListProps>  = ({id, userToken, list, leaveList, miniView,se
             <div className='d-flex m-3 justify-content-center align-items-center'>
                 <button className= 'btn btn-primary m-3' onClick = {()=>leaveList()}>Back</button>
                 <button className= 'btn btn-danger m-3' onClick = {()=>chooseToLeaveList()}>Leave</button>
-                <h1>{list.listName}</h1>
+                <h1>{sessionName+": "+list.listName}</h1>
             </div>
             {mainWindow}
         </div>

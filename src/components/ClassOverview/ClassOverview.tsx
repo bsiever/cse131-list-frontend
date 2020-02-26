@@ -103,7 +103,7 @@ const ClassOverview: React.FC<ClassOverviewProps>  = ({id, userToken, classId, c
         for (const [list_id, listName] of Object.entries(chosenSession.lists)) {
             if(permissionLevel >= PermissionLevel.TA) {
                 listList.push(
-                    <List selectList={selectList} miniView={true} id={id} userToken = {userToken} list = {{id:list_id,listName,permissionLevel}} leaveList  = {()=>{}}>
+                    <List sessionName={chosenSession.sessionName} selectList={selectList} miniView={true} id={id} userToken = {userToken} list = {{id:list_id,listName,permissionLevel}} leaveList  = {()=>{}}>
                     </List>)
             } else {
                 listList.push(<div key={list_id} className='class_option align-items-center flex-fill col-md-5 rounded-lg bg-primary text-center p-3 pt-5 pb-5 mx-auto mb-3' onClick = {()=>selectList({id:list_id,permissionLevel,listName})} >

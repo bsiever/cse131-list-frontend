@@ -145,7 +145,7 @@ class App extends React.Component {
     } else if(this.state.currentList === null) {
       mainItem = <ClassOverview setSession={this.setChosenSession} chosenSession={this.state.chosenSession} id={this.state.id} userToken = {this.state.userToken} className = {this.state.currentClass.className} classId = {this.state.currentClass.id} exitClass={this.exitClass} updateCurrentClass={this.selectClass} selectList={this.selectList}/>
     } else {
-      mainItem = <List selectList={this.selectList} miniView={false} id={this.state.id} userToken = {this.state.userToken} list = {this.state.currentList} leaveList  = {this.leaveList} />
+      mainItem = <List sessionName={this.state.chosenSession ? this.state.chosenSession.sessionName : "List"} selectList={this.selectList} miniView={false} id={this.state.id} userToken = {this.state.userToken} list = {this.state.currentList} leaveList  = {this.leaveList} />
     }
     return (
       <div className="bg-dark text-white d-flex flex-column text-center min-vh-100">
