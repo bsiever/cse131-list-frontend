@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { DatabaseScheduledEvent } from './ClassScheduleTab';
+import SessionNameSelector from './SessionNameSelector';
 
 interface ClassScheduleTabRowProps {
     scheduledEvent: DatabaseScheduledEvent,
-    updateScheduledEvent(id: string,minute:number,hour:number,day:number,endMinute:number,endHour:number,endDay:number,sessionName: string): void,
+    updateScheduledEvent(id: string,minute:number,hour:number,day:number,endMinute:number,endHour:number,endDay:number,sessionName: string, startingLists: string[]): void,
     deleteScheduledEvent(id:string):void
 }
 
@@ -15,7 +16,10 @@ const ClassScheduleTabRow: React.FC<ClassScheduleTabRowProps>  = ({scheduledEven
     const [newEndHour, setNewEndHour] = useState(scheduledEvent.endHour)
     const [newEndDay, setNewEndDay] = useState(scheduledEvent.endDay)
     const [newSessionName, setNewSessionName] = useState(scheduledEvent.sessionName)
+    const [newListNames, setNewListNames] = useState(scheduledEvent.startingLists)
 
+    const [gettingNewListNames, setGettingNewListNames] = useState(false)
+    
     const [requestInProgress, setRequestInProgress] = useState(false)
 
     const deleteScheduledEventWrapper = async (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -28,8 +32,18 @@ const ClassScheduleTabRow: React.FC<ClassScheduleTabRowProps>  = ({scheduledEven
     const updateScheduledEventWrapper = async (e: React.FormEvent<HTMLButtonElement>) => {
         if(e) e.preventDefault();
         await setRequestInProgress(true)
-        await updateScheduledEvent(scheduledEvent.id,newStartMinute,newStartHour,newStartDay,newEndMinute,newEndHour,newEndDay,newSessionName);
+        await updateScheduledEvent(scheduledEvent.id,newStartMinute,newStartHour,newStartDay,newEndMinute,newEndHour,newEndDay,newSessionName,newListNames);
         setRequestInProgress(false)
+    }
+
+    const selectStartingList = async (e: { preventDefault: () => void; }) => {
+        if(e) e.preventDefault();
+        setGettingNewListNames(true);
+    }
+    
+    const setStartingLists = async (list: string[]) => {
+        setNewListNames(list);
+        setGettingNewListNames(false);
     }
 
     return (
@@ -72,11 +86,15 @@ const ClassScheduleTabRow: React.FC<ClassScheduleTabRowProps>  = ({scheduledEven
                 <input className='form-control' type='number' min='0' max='59' value={newEndMinute} onChange={e=>setNewEndMinute(Number(e.target.value))}/>
             </td>
             <td>
+                <button className='btn btn-primary' disabled={requestInProgress} onClick={e=>selectStartingList(e)}>List Names</button>
+            </td>
+            <td>
                 <button className='btn btn-success' onClick={(e)=>updateScheduledEventWrapper(e)} disabled={requestInProgress}>Update</button>
             </td>
             <td>
                 <button className='btn btn-danger' onClick={(e)=>deleteScheduledEventWrapper(e)} disabled={requestInProgress}>&times;</button>
             </td>
+            {gettingNewListNames?<SessionNameSelector closeSessionCreator={setStartingLists} lists={newListNames} />:null}
         </tr>
     );
 }

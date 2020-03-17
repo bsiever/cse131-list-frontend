@@ -11,10 +11,12 @@ interface ClassOverviewAdminProps {
     userToken: string,
     classId: string,
     exitClass():void,
-    updateCurrentClass(newClass: ClassObj): void
+    updateCurrentClass(newClass: ClassObj): void,
+    upateCurrentClassLocal(): void,
+    remoteMode: boolean
 }
 
-const ClassOverviewAdmin: React.FC<ClassOverviewAdminProps>  = ({id, userToken, classId, exitClass, updateCurrentClass}) => {
+const ClassOverviewAdmin: React.FC<ClassOverviewAdminProps>  = ({id, userToken, classId, exitClass, updateCurrentClass,upateCurrentClassLocal, remoteMode}) => {
     const [classUsers, setClassUsers] = useState(null) as [User[] | null, React.Dispatch<SetStateAction<User[]| null>>];
     const [newName, setNewName] = useState('');
     const [newEmail, setNewEmail] = useState('');
@@ -118,10 +120,6 @@ const ClassOverviewAdmin: React.FC<ClassOverviewAdminProps>  = ({id, userToken, 
             await updateClassInfo();
             setRequestInProgress(false)
         }
-        
-        
-        //await ;
-        
     }
 
     const deleteUser = async (user: User) => {
@@ -149,6 +147,18 @@ const ClassOverviewAdmin: React.FC<ClassOverviewAdminProps>  = ({id, userToken, 
         }
         setRequestInProgress(false)
     }
+
+    const flipRemoteMode = async (e: { preventDefault: () => void; }) => {
+        await setRequestInProgress(true)
+        const newClassInfo = await makeRequest('setRemoteMode',{id, userToken, classId, newRemoteMode: !remoteMode})
+        if(newClassInfo.success) {
+            await upateCurrentClassLocal();
+        } else {
+            setMessage('Failed to Change Remote Mode')
+        }
+        setRequestInProgress(false)
+    }
+    
     if (!classUsers) {
         return (
             <div className='align-items-center align-middle my-auto'>
@@ -263,6 +273,19 @@ const ClassOverviewAdmin: React.FC<ClassOverviewAdminProps>  = ({id, userToken, 
                                         </label>
                                     </div>
                                     <button type='submit' className='btn btn-primary' disabled={requestInProgress}>Update Class Name</button>
+                                </form>
+                            </div>
+                        </div>
+                        <div className='card border-dark'>
+                            <div className='card-body'>
+                                <h4 className='card-title'>Change Remote Mode</h4>
+                                <form onSubmit={(e)=>{e.preventDefault()}}>
+                                    <div className='form-group'>
+                                        <label className='text-left'>
+                                            Current Remote Mode
+                                            <input type='checkbox' className='form-control'  checked={remoteMode} onChange={(e)=>flipRemoteMode(e)} required />
+                                        </label>
+                                    </div>
                                 </form>
                             </div>
                         </div>

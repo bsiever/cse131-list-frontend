@@ -3,6 +3,7 @@ import { makeRequest, APIResponse } from '../../utility/api';
 import { PermissionLevel, ClassObj,  SessionObj } from '../../utility/types';
 import ClassOverviewAdmin from './ClassOverviewAdmin';
 import List, { ListInfo } from '../List/List';
+import SessionNameSelector from './SessionNameSelector';
 
 interface ClassOverviewProps {
     id: string,
@@ -22,6 +23,8 @@ const ClassOverview: React.FC<ClassOverviewProps>  = ({id, userToken, classId, c
     const [requestInProgress, setRequestInProgress] = useState(false);
     const [permissionLevel, setPermissionLevel] = useState(PermissionLevel.Student);
     const [fullView, setFullView] = useState(false);
+    const [remoteMode, setRemoteMode] = useState(false);
+    const [creatingSessionNames, setCreatingSesionNames] = useState(false); 
 
     const updateClassSessionsAndInfo = useCallback(async () => {
         let response: APIResponse = await makeRequest('getClassInfo', {id, userToken, classId});
@@ -29,8 +32,9 @@ const ClassOverview: React.FC<ClassOverviewProps>  = ({id, userToken, classId, c
         if(response.success) {
             let rawSessions = Object.entries((response.data as any).sessions as {[s: string]: SessionObj}).map(([id,obj])=>{return {id,sessionName: obj.sessionName, lists: obj.lists}})
             rawSessions.sort((a,b)=> (a.sessionName > b.sessionName) ? 1 : (a.sessionName < b.sessionName) ? -1: 0) //Sort by name
-            await setSessions(rawSessions)
-            await setPermissionLevel((response.data as any).classUsers[id]);
+            setSessions(rawSessions)
+            setPermissionLevel((response.data as any).classUsers[id]);
+            setRemoteMode((response.data as any).remoteMode);
         } else {
             console.error(`Unable to update info for class ${className}`)
         }
@@ -41,8 +45,13 @@ const ClassOverview: React.FC<ClassOverviewProps>  = ({id, userToken, classId, c
     const createSession = async (e: { preventDefault: () => void; }) => {
         if(e) e.preventDefault();
         await setRequestInProgress(true)
-        //Add user
-        await makeRequest('createSession', {id, userToken, classId, newSessionName: newName, startingLists: ['Help List','Demo List']});
+        setCreatingSesionNames(true);
+    }
+
+    const createSessionCall = async (sessionNames: String[]) => {
+        setCreatingSesionNames(false);
+        //Add Session
+        await makeRequest('createSession', {id, userToken, classId, newSessionName: newName, startingLists: sessionNames});
         setNewName('')
         await updateClassSessionsAndInfo();
         setRequestInProgress(false)
@@ -76,7 +85,7 @@ const ClassOverview: React.FC<ClassOverviewProps>  = ({id, userToken, classId, c
                     <input type='text' className='form-control ml-3' maxLength={100} value={newName} onChange={e=>setNewName(e.target.value)} placeholder='Session Name' required />
                 </label>
             </div>
-            <button type='submit' className='btn btn-success' disabled={requestInProgress}>Create Session</button>
+            <button type='submit' className='btn btn-success' disabled={requestInProgress}>Pick List Names</button>
         </form> : null
         let sessionList = []
         for (const {id, sessionName, lists} of sessions) {
@@ -107,10 +116,10 @@ const ClassOverview: React.FC<ClassOverviewProps>  = ({id, userToken, classId, c
                 for (const [list_id, listName] of Object.entries(givenSession.lists)) {
                     if(permissionLevel >= PermissionLevel.TA) {
                         listList.push(
-                            <List sessionName={givenSession.sessionName} selectList={selectList} miniView={true} id={id} userToken = {userToken} list = {{id:list_id,listName,permissionLevel}} leaveList  = {()=>{}}>
+                            <List sessionName={givenSession.sessionName} selectList={selectList} miniView={true} id={id} userToken = {userToken} list = {{id:list_id,listName,permissionLevel,remoteMode}} leaveList  = {()=>{}}>
                             </List>)
                     } else {
-                        listList.push(<div key={list_id} className='class_option align-items-center flex-fill col-md-5 rounded-lg bg-primary text-center p-3 pt-5 pb-5 mx-auto mb-3' onClick = {()=>selectList({id:list_id,permissionLevel,listName})} >
+                        listList.push(<div key={list_id} className='class_option align-items-center flex-fill col-md-5 rounded-lg bg-primary text-center p-3 pt-5 pb-5 mx-auto mb-3' onClick = {()=>selectList({id:list_id,permissionLevel,listName,remoteMode})} >
                             <h3>{listName}</h3>
                         </div>)
                     }
@@ -128,11 +137,12 @@ const ClassOverview: React.FC<ClassOverviewProps>  = ({id, userToken, classId, c
     
     return (
         <div className='align-items-center align-middle my-auto'>
+            {creatingSessionNames?<SessionNameSelector closeSessionCreator={createSessionCall} lists={['Help List', 'Demo List']} />:null}
             <h1>{className}
                 {permissionLevel === PermissionLevel.Professor && chosenSession === null ? <button className={'btn my-a ml-3 '+(fullView?'btn-success':'btn-danger')} onClick={()=>setFullView(!fullView)}>Toggle Full View</button>:null}
             </h1>
             {mainResult}
-            {permissionLevel === PermissionLevel.Professor ? <ClassOverviewAdmin id={id} userToken = {userToken} classId = {classId} exitClass={exitClass} updateCurrentClass={updateCurrentClass}/>: null}
+            {permissionLevel === PermissionLevel.Professor ? <ClassOverviewAdmin id={id} userToken = {userToken} classId = {classId} exitClass={exitClass} updateCurrentClass={updateCurrentClass} upateCurrentClassLocal={updateClassSessionsAndInfo} remoteMode={remoteMode}/>: null}
         </div>
     );
 }
