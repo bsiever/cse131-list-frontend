@@ -24,15 +24,15 @@ const ClassScheduleTabRow: React.FC<ClassScheduleTabRowProps>  = ({scheduledEven
 
     const deleteScheduledEventWrapper = async (e: React.MouseEvent<HTMLButtonElement>) => {
         if(e) e.preventDefault();
-        await setRequestInProgress(true)
-        await deleteScheduledEvent(scheduledEvent.id);
+        setRequestInProgress(true)
+        deleteScheduledEvent(scheduledEvent.id);
         setRequestInProgress(false)
     }
 
     const updateScheduledEventWrapper = async (e: React.FormEvent<HTMLButtonElement>) => {
         if(e) e.preventDefault();
-        await setRequestInProgress(true)
-        await updateScheduledEvent(scheduledEvent.id,newStartMinute,newStartHour,newStartDay,newEndMinute,newEndHour,newEndDay,newSessionName,newListNames);
+        setRequestInProgress(true)
+        updateScheduledEvent(scheduledEvent.id,newStartMinute,newStartHour,newStartDay,newEndMinute,newEndHour,newEndDay,newSessionName,newListNames);
         setRequestInProgress(false)
     }
 

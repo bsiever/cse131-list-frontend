@@ -6,7 +6,8 @@ export interface ListInfo {
     id: string,
     permissionLevel: PermissionLevel,
     listName: string,
-    remoteMode: boolean
+    remoteMode: boolean,
+    remoteURL: null | string
 }
 interface ListProps {
     id: string,
@@ -15,7 +16,8 @@ interface ListProps {
     leaveList(): void,
     miniView: boolean,
     selectList(obj: ListInfo): void,
-    sessionName: string
+    sessionName: string,
+    disableAudioAlerts: boolean
 }
 export enum WebSocketMessages {
     InitalizeSession = 'initSession',
@@ -43,7 +45,7 @@ var lastHelpedUserTime = 0;
 var helpUserTimerID: null | number = null;
 var listTotalMirror = -1;
 
-const List: React.FC<ListProps> = ({ id, userToken, list, leaveList, miniView, selectList, sessionName }) => {
+const List: React.FC<ListProps> = ({ id, userToken, list, leaveList, miniView, selectList, sessionName, disableAudioAlerts }) => {
 
     const [socket, setSocket] = useState(null) as [null | WebSocket, React.Dispatch<SetStateAction<null | WebSocket>>]
     const [position, setPosition] = useState(-1);
@@ -59,24 +61,13 @@ const List: React.FC<ListProps> = ({ id, userToken, list, leaveList, miniView, s
 
 
     const joinList = useCallback((e: Event): any => {
-        let remoteURL = "";
-        if(list.permissionLevel !== PermissionLevel.Student && !miniView && list.remoteMode) {
-            const promptResponse = window.prompt("What is your URL(including HTTPS://)?");
-            if(promptResponse === null) {
-                setLeavingList(true);
-                leaveList();
-                return;
-            } else {
-                remoteURL = promptResponse;
-            }
-        }
         (e.target as WebSocket).send(JSON.stringify({
             action: 'joinList',
             data: {
                 list_id: list.id,
                 id,
                 userToken,
-                remoteURL
+                remoteURL: list.remoteURL === null ? "": list.remoteURL
             }
         }))
     }, [id, list, userToken, miniView, leaveList]);
@@ -90,7 +81,7 @@ const List: React.FC<ListProps> = ({ id, userToken, list, leaveList, miniView, s
             }
         }
         async function launchSocket() {
-            if (!socket || (((socket as WebSocket).readyState === WebSocket.CLOSED || (socket as WebSocket).readyState === WebSocket.CLOSING) && !leavingList)) {
+            if (!socket || ((socket.readyState === WebSocket.CLOSED || socket.readyState === WebSocket.CLOSING) && !leavingList)) {
                 console.log('Attempting Reconnection');
                 const socket = new WebSocket(websocketUrl)
                 socket.onmessage = async (event: MessageEvent) => {
@@ -119,10 +110,20 @@ const List: React.FC<ListProps> = ({ id, userToken, list, leaveList, miniView, s
                             }
                             break;
                         case WebSocketMessages.HelpEvent:
-                            window.alert(`You are being helped by ${data.message.helperName}`+(data.message.remoteURL?"\nYou will be redirected to to appropriate meeting":""))
+                            try {
+                                if(!disableAudioAlerts) {
+                                    const audio = new Audio('/notification.mp3');
+                                    await audio.play();
+                                }
+                            } catch(e) {
+                                console.log(e)
+                            }
+                            
                             if(list.remoteMode) {
+                                await new Promise(resolve => setTimeout(resolve,1000));
                                 window.location.href = data.message.remoteURL
-                                return
+                                setTimeout(()=>window.alert(`You are being helped by ${data.message.helperName}`+(list.remoteMode?"\nIf you are not redirected after clicking OK, please go to "+data.message.remoteURL:"")),100)
+                                return false
                             }
                             setLeavingList(true);
                             leaveList();
@@ -134,6 +135,16 @@ const List: React.FC<ListProps> = ({ id, userToken, list, leaveList, miniView, s
                             setLastHelped(data.message.studentName)
                             break;
                         case WebSocketMessages.UpdateListStatus:
+                            if(listTotalMirror===0 && data.message.totalNumber>0) {
+                                try {
+                                    if(!disableAudioAlerts) {
+                                        const audio = new Audio('/notification.mp3');
+                                        await audio.play();
+                                    }
+                                }catch(e) {
+                                    console.log(e)
+                                }
+                            } 
                             setListTotal(data.message.totalNumber)
                             listTotalMirror = data.message.totalNumber
                             setFlaggedUsers(data.message.flaggedUsers)
@@ -209,7 +220,7 @@ const List: React.FC<ListProps> = ({ id, userToken, list, leaveList, miniView, s
     }
 
     const chooseToLeaveList = async () => {
-        await setLeavingList(true);
+        setLeavingList(true);
         sendWebsocketMessage('leaveList', {
             list_id: list.id,
             id,
@@ -218,7 +229,7 @@ const List: React.FC<ListProps> = ({ id, userToken, list, leaveList, miniView, s
         leaveList()
     }
     let mainWindow;
-    let estimatedWaitP = (estimatedWaitTime !== 0 && position !== 0 && listTotal !== 0 && estimatedWaitTime >= 60000) ? <p>Estimated Wait: {Math.floor(estimatedWaitTime / 60000)} minute(s)</p> : <p>Expected Wait: None</p>;
+    let estimatedWaitP = (estimatedWaitTime !== 0  && (listTotal !== 0 || list.permissionLevel == PermissionLevel.Student )&& estimatedWaitTime >= 60000) ? <p>Estimated Wait: {Math.floor(estimatedWaitTime / 60000)} minute(s)</p> : <p>Expected Wait: None</p>;
     if (list.permissionLevel === PermissionLevel.Student) {
         mainWindow = <div>
             <h2>Your Current Position: {position !== -1 ? position : 'Loading'}</h2>

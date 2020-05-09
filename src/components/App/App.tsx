@@ -43,7 +43,9 @@ class App extends React.Component {
     currentClass: null as ClassObj | null,
     currentList: null as ListInfo | null,
     admin: false as boolean,
-    chosenSession: null as null | SessionObj
+    chosenSession: null as null | SessionObj,
+    remoteURL: null as null | string,
+    disableAudioAlerts: false
   }
 
   /*State Hooks*/
@@ -55,7 +57,7 @@ class App extends React.Component {
       let response: APIResponse = await makeRequest('login',{client_code});
       if(response.success) {
         const data: any = response.data;
-        this.setUserInfo(data.id, data.username, data.fullName, data.userToken, data.classes, data.admin);
+        this.setUserInfo(data.id, data.username, data.fullName, data.userToken, data.classes, data.admin, data.disableAudioAlerts);
         document.cookie = "id="+data.id;
         document.cookie = "token="+data.userToken;
         window.history.replaceState({}, document.title, "/");
@@ -65,7 +67,7 @@ class App extends React.Component {
     } else if(getCookie("token") !== "" && getCookie("id") !== "" ) {
       let success = await this.refreshUserInfo(getCookie("id"),getCookie("token"),true);
       if(success) {
-        await this.setState({id: getCookie("id"), userToken: getCookie("token")});
+        this.setState({id: getCookie("id"), userToken: getCookie("token")});
       } else {
         document.cookie = "";
       }
@@ -74,8 +76,8 @@ class App extends React.Component {
 
   
 
-  setUserInfo = (id: string, username: string, name: string, userToken: string, classes: ClassObj[], admin: boolean) => {
-    this.setState({id,username, name,userToken,tokenTime: Date.now(),classes, admin})
+  setUserInfo = (id: string, username: string, name: string, userToken: string, classes: ClassObj[], admin: boolean, disableAudioAlerts: boolean) => {
+    this.setState({id,username, name,userToken,tokenTime: Date.now(),classes, admin,disableAudioAlerts})
   }
 
   setChosenSession = (chosenSession: SessionObj) => {
@@ -95,7 +97,7 @@ class App extends React.Component {
     let response: APIResponse = await makeRequest('refreshUserInfo',{id, userToken},failureAllowed);
     if(response.success) {
       const data: any = response.data;
-      this.setState({classes: data.classes, username: data.username, name: data.fullName, admin: data.admin})
+      this.setState({classes: data.classes, username: data.username, name: data.fullName, admin: data.admin, disableAudioAlerts: data.disableAudioAlerts})
     }
     return response.success;
   }
@@ -109,6 +111,9 @@ class App extends React.Component {
     this.setState({currentList: null})
   }
 
+  setRemoteURL = async(r: string) => {
+    this.setState({remoteURL: r})
+  }
   logout = async (inactivity: boolean) => {
     let response: APIResponse = await makeRequest('logout',{id: this.state.id, userToken: this.state.userToken});
     if(response.success) {
@@ -121,7 +126,9 @@ class App extends React.Component {
         classes: [],
         currentClass: null,
         currentList: null,
-        admin: false
+        admin: false,
+        chosenSession: null,
+        disableAudioAlerts: false
       })
     }
     if(inactivity) {
@@ -138,18 +145,18 @@ class App extends React.Component {
         <ClassSelector classes={this.state.classes} selectClass={this.selectClass} id={this.state.id} userToken ={this.state.userToken} refreshClasses={()=>this.refreshUserInfo()} />
         {this.state.admin && <div  className='align-items-center align-middle my-auto'>
           <h1>Administrative Settings</h1>
-          <CreateClass id={this.state.id} userToken = {this.state.userToken as string} refreshClasses= {this.refreshUserInfo}/> 
-          <AdminManagement id={this.state.id} userToken = {this.state.userToken as string} />
+          <CreateClass id={this.state.id} userToken = {this.state.userToken} refreshClasses= {this.refreshUserInfo}/> 
+          <AdminManagement id={this.state.id} userToken = {this.state.userToken} />
         </div>}
       </div>
     } else if(this.state.currentList === null) {
-      mainItem = <ClassOverview setSession={this.setChosenSession} chosenSession={this.state.chosenSession} id={this.state.id} userToken = {this.state.userToken} className = {this.state.currentClass.className} classId = {this.state.currentClass.id} exitClass={this.exitClass} updateCurrentClass={this.selectClass} selectList={this.selectList}/>
+      mainItem = <ClassOverview disableAudioAlerts={this.state.disableAudioAlerts} setSession={this.setChosenSession} chosenSession={this.state.chosenSession} id={this.state.id} userToken = {this.state.userToken} className = {this.state.currentClass.className} classId = {this.state.currentClass.id} exitClass={this.exitClass} updateCurrentClass={this.selectClass} selectList={this.selectList} remoteURL= {this.state.remoteURL} setRemoteURL={this.setRemoteURL}/>
     } else {
-      mainItem = <List sessionName={this.state.chosenSession ? this.state.chosenSession.sessionName : "List"} selectList={this.selectList} miniView={false} id={this.state.id} userToken = {this.state.userToken} list = {this.state.currentList} leaveList  = {this.leaveList} />
+      mainItem = <List disableAudioAlerts={this.state.disableAudioAlerts} sessionName={this.state.chosenSession ? this.state.chosenSession.sessionName : "List"} selectList={this.selectList} miniView={false} id={this.state.id} userToken = {this.state.userToken} list = {this.state.currentList} leaveList  = {this.leaveList} />
     }
     return (
       <div className="bg-dark text-white d-flex flex-column text-center min-vh-100">
-        <GlobalNav id={this.state.id} userToken = {this.state.userToken as string} username={this.state.username} fullName={this.state.name} refreshUserInfo={this.refreshUserInfo} goHome={this.exitClass} logout={this.logout}/>
+        <GlobalNav id={this.state.id} userToken = {this.state.userToken as string} disableAudioAlerts={this.state.disableAudioAlerts} username={this.state.username} fullName={this.state.name} refreshUserInfo={this.refreshUserInfo} goHome={this.exitClass} logout={this.logout}/>
         {/* TODO breadcrumbs */}
         <div className='flex-column flex-wrap'>
           

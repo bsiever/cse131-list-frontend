@@ -30,7 +30,7 @@ const ClassOverviewAdmin: React.FC<ClassOverviewAdminProps>  = ({id, userToken, 
     const [newMultiplePermissionLevel, setNewMultiplePermissionLevel] = useState(PermissionLevel.Student)
     const [multiAddResult, setMultiAddResult] = useState('');
     const fileRef = useRef() as RefObject<HTMLInputElement>;
-
+    const newImage = useRef() as RefObject<HTMLInputElement>;
 
 
     const loadClassInformation = async (e: { preventDefault: () => void; }) => {
@@ -47,10 +47,10 @@ const ClassOverviewAdmin: React.FC<ClassOverviewAdminProps>  = ({id, userToken, 
         if(response.success) {
             let data = response.data as {classUsers: User[], userCode: string, taCode: string, adminCode: string};
             data.classUsers.sort((a,b)=> (a.fullName > b.fullName) ? 1 : (a.fullName < b.fullName) ? -1: 0) //Sort by name
-            await setClassUsers(data.classUsers)
-            await setStudentCode(data.userCode);
-            await setTaCode(data.taCode);
-            await setAdminCode(data.adminCode);
+            setClassUsers(data.classUsers)
+            setStudentCode(data.userCode);
+            setTaCode(data.taCode);
+            setAdminCode(data.adminCode);
         } else {
             console.error("Unable to update admin information")
         }
@@ -58,7 +58,7 @@ const ClassOverviewAdmin: React.FC<ClassOverviewAdminProps>  = ({id, userToken, 
 
     const createUser = async (e: { preventDefault: () => void; }) => {
         if(e) e.preventDefault();
-        await setRequestInProgress(true)
+        setRequestInProgress(true)
         //Add user
         await makeRequest('createUpdateClassMembership', {id, userToken, removeUser: false, subjectUsername: newEmail, subjectName: newName, newPermissionLevel: newPermissionLevel, changingClass: classId});
         setMessage('User added successfully')
@@ -70,7 +70,7 @@ const ClassOverviewAdmin: React.FC<ClassOverviewAdminProps>  = ({id, userToken, 
 
     const createMultipleUsers = async (e: { preventDefault: () => void; }) => {
         if(e) e.preventDefault();
-        await setRequestInProgress(true)
+        setRequestInProgress(true)
         setMultiAddResult('');
         //Add users
         try {
@@ -137,22 +137,22 @@ const ClassOverviewAdmin: React.FC<ClassOverviewAdminProps>  = ({id, userToken, 
 
     const changeClassName = async (e: { preventDefault: () => void; }) => {
         if(e) e.preventDefault();
-        await setRequestInProgress(true)
+        setRequestInProgress(true)
         const newClassInfo = await makeRequest('setClassName',{id, userToken, classId, newClassName})
         if(newClassInfo.success) {
-            await updateCurrentClass(newClassInfo.data as ClassObj);
+            updateCurrentClass(newClassInfo.data as ClassObj);
         } else {
             setMessage('Failed to Rename Class')
-            await setNewClassName('')
+            setNewClassName('')
         }
         setRequestInProgress(false)
     }
 
     const flipRemoteMode = async (e: { preventDefault: () => void; }) => {
-        await setRequestInProgress(true)
+        setRequestInProgress(true)
         const newClassInfo = await makeRequest('setRemoteMode',{id, userToken, classId, newRemoteMode: !remoteMode})
         if(newClassInfo.success) {
-            await upateCurrentClassLocal();
+            upateCurrentClassLocal();
         } else {
             setMessage('Failed to Change Remote Mode')
         }
@@ -170,11 +170,34 @@ const ClassOverviewAdmin: React.FC<ClassOverviewAdminProps>  = ({id, userToken, 
 
     const deleteClass = async (e: { preventDefault: () => void; }) => {
         if(e) e.preventDefault();
-        await setRequestInProgress(true)
+        setRequestInProgress(true)
         if(window.confirm('Are you sure you want to delete this class? (This action is irreversable)')) {
             await makeRequest('deleteClass',{id, userToken, changingClass: classId})
             exitClass()
         }
+        setRequestInProgress(false)
+    }
+
+    const changeClassImage = async (e: { preventDefault: () => void; }) => {
+        if(e) e.preventDefault();
+        setRequestInProgress(true);
+        if(newImage.current !== null && newImage.current.files !== null) {
+            const image = newImage.current.files[0];
+            const result:any =  await (await makeRequest('getDailyImagePostURL',{id,userToken,classId,imageType: image.type})).data
+            if(result) {
+                await fetch(result.postURL,{method:'PUT',body:image,headers:{'Content-Type': image.type, 'Content-Disposition' : 'filename=' + result.newName}});
+                await makeRequest('setClassDailyImage',{id,userToken,classId, newClassImage: result.newName})
+            }
+        } else {
+            window.alert('Please selet an image')
+        }
+        setRequestInProgress(false)
+    }
+
+    const clearClassImage = async (e: { preventDefault: () => void; }) => {
+        if(e) e.preventDefault();
+        setRequestInProgress(true);
+        await makeRequest('setClassDailyImage',{id,userToken,classId, newClassImage: ""})
         setRequestInProgress(false)
     }
 
@@ -286,6 +309,21 @@ const ClassOverviewAdmin: React.FC<ClassOverviewAdminProps>  = ({id, userToken, 
                                             <input type='checkbox' className='form-control'  checked={remoteMode} onChange={(e)=>flipRemoteMode(e)} required />
                                         </label>
                                     </div>
+                                </form>
+                            </div>
+                        </div>
+                        <div className='card border-dark'>
+                            <div className='card-body'>
+                                <h4 className='card-title'>Set Image</h4>
+                                <form onSubmit={changeClassImage}>
+                                    <div className='form-group custom-file'>
+                                        <label className='text-left custom-file-label'>
+                                            Choose Image
+                                            <input type='file' ref={newImage} accept='image/png, image/jpeg' style={ { height: 0 } } className='form-control custom-file-input' required />
+                                        </label>
+                                    </div>
+                                    <button type='submit' className='btn btn-primary ' disabled={requestInProgress}>Update Class Image</button>
+                                    <button type='submit' className='btn btn-primary mt-2' onClick={clearClassImage} disabled={requestInProgress}>Clear Class Image</button>
                                 </form>
                             </div>
                         </div>

@@ -8,21 +8,23 @@ interface SidebarProps {
     fullName: string,
     refreshUserInfo(): void,
     close(): void,
-    logout(): Promise<boolean>
+    logout(): Promise<boolean>,
+    disableAudioAlerts: boolean
 }
 
-const Sidebar: React.FC<SidebarProps>  = ({id, userToken, fullName, refreshUserInfo, close, logout}) => {
+const Sidebar: React.FC<SidebarProps>  = ({id, userToken, fullName, disableAudioAlerts, refreshUserInfo, close, logout}) => {
     const [requestInProgress, setRequestInProgress] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
     const [newName, setNewName] = useState(fullName)
+    const [newAudioAlerts,setDisableAudioAlerts] = useState(disableAudioAlerts);
 
     const updateInformation = async (e: { preventDefault: () => void; }) => {
         if(e) e.preventDefault();
-        await setRequestInProgress(true)
+        setRequestInProgress(true)
         //Add user
-        const response: APIResponse = await makeRequest('setUserInfo', {id, userToken, newName});
+        const response: APIResponse = await makeRequest('setUserInfo', {id, userToken, newName, newAudioAlerts});
         if(response.success) {
-            await refreshUserInfo();
+            refreshUserInfo();
             setErrorMessage('Updated Information Successfully')
             setRequestInProgress(false)
             close();
@@ -35,10 +37,10 @@ const Sidebar: React.FC<SidebarProps>  = ({id, userToken, fullName, refreshUserI
 
     const logoutWrapper = async (e: { preventDefault: () => void; }) => {
         if(e) e.preventDefault();
-        await setRequestInProgress(true)
+        setRequestInProgress(true)
         const result = await logout()
         if(!result) {
-            await setRequestInProgress(false)
+            setRequestInProgress(false)
         }
     }
     return (
@@ -52,11 +54,17 @@ const Sidebar: React.FC<SidebarProps>  = ({id, userToken, fullName, refreshUserI
                         </button>
                     </div>
                     <div className='modalBody'>
-                        <form className='form-inline justify-content-center m-2' onSubmit={updateInformation}>
-                            <div className='form-group'>
-                                <label className='text-left mr-3'>
+                        <form className='justify-content-center m-2' onSubmit={updateInformation}>
+                            <div>
+                                <label>
                                     Name
                                     <input type='text' className='form-control ml-3 input-medium' maxLength={50} value={newName} onChange={e=>setNewName(e.target.value)} placeholder='Name' required />
+                                </label>
+                            </div>
+                            <div>
+                                <label>
+                                    Disable Audio Alerts
+                                    <input type='checkbox' className='form-control'  checked={newAudioAlerts} onChange={(e)=>setDisableAudioAlerts(!newAudioAlerts)}/>
                                 </label>
                             </div>
                             <button type='submit' className='btn btn-primary' disabled={requestInProgress}>Update User Information</button>

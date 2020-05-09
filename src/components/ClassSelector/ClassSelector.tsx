@@ -28,11 +28,11 @@ const ClassSelector: React.FC<ClassSelectorProps> = ({classes,selectClass,id,use
         if(e) e.preventDefault();
         const result = await makeRequest('selfAddClass', {id, userToken, classCode});
         if(result.success) {
-            await setClassCode('');
-            await setErrorMessage('Success!');
+            setClassCode('');
+            setErrorMessage('Success!');
             refreshClasses();
         } else if(result.errorCode === ErrorTypes.UserAlreadyInClass) {
-            await setErrorMessage('Already In Class');
+            setErrorMessage('Already In Class');
         } else {
             setErrorMessage('Class Not Found');
         }

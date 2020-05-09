@@ -1,8 +1,8 @@
 import {ErrorTypes} from './types'
 
-const prefixUrl = 'https://rfnyp32d3i.execute-api.us-east-1.amazonaws.com/dev/'
+const prefixUrl = 'https://api.' + window.location.host + '/'  //Now dynamic
 
-export const websocketUrl = 'wss://dq3o0n1lqf.execute-api.us-east-1.amazonaws.com/dev';
+export const websocketUrl = 'wss://websocket.' + window.location.host + '/';
 
 export interface APIResponse {
     success: boolean,

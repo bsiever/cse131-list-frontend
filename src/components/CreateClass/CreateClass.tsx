@@ -14,7 +14,7 @@ const CreateClass: React.FC<CreateClassProps>  = ({id, userToken, refreshClasses
 
     const createClass = async (e: { preventDefault: () => void; }) => {
         if(e) e.preventDefault();
-        await setRequestInProgress(true)
+        setRequestInProgress(true)
         //Add user
         const res: APIResponse = await makeRequest('createClass', {id, userToken, className});
         setErrorMessage(res.success ? 'Class sucessfully created': 'An error occurred creating the class')

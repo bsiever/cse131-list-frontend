@@ -27,7 +27,7 @@ const AdminManagement: React.FC<AdminManagementProps>  = ({id, userToken}) => {
         if(response.success) {
             let data: User[] = response.data as User[];
             data.sort((a,b)=> (a.fullName > b.fullName) ? 1 : (a.fullName < b.fullName) ? -1: 0) //Sort by name
-            await setAdminUsers(data)
+            setAdminUsers(data)
         } else {
             console.error("Unable to update admin information")
         }
@@ -35,7 +35,7 @@ const AdminManagement: React.FC<AdminManagementProps>  = ({id, userToken}) => {
 
     const createAdmin = async (e: { preventDefault: () => void; }) => {
         if(e) e.preventDefault();
-        await setRequestInProgress(true)
+        setRequestInProgress(true)
         //Add user
         await makeRequest('createUpdateAdminStatus', {id, userToken, newUser: true, newAdminStatus: true, subjectUsername: newAdminEmail, subjectName: newAdminName});
         setMessage('User added successfully')
@@ -47,7 +47,7 @@ const AdminManagement: React.FC<AdminManagementProps>  = ({id, userToken}) => {
 
     const deleteUser = async (e: { preventDefault: () => void; }, user: User) => {
         if(e) e.preventDefault();
-        await setRequestInProgress(true)
+        setRequestInProgress(true)
         await makeRequest('createUpdateAdminStatus', {id, userToken, newUser: false, newAdminStatus: false, subjectUsername: user.username});
         await updateAdminInfo();
         setRequestInProgress(false)

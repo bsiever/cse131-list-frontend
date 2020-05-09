@@ -43,7 +43,7 @@ const ClassScheduleTab: React.FC<ClassScheduleTabProps>  = ({id, userToken, clas
 
     const updateScheduledEvents = useCallback(async() => {
         let response: APIResponse = await makeRequest('getScheduleForClass', {id, userToken, classId});
-        await setScheduledEvents(response.data as any);
+        setScheduledEvents(response.data as any);
     },[id,userToken,classId]);
 
     const updateScheduledEvent = async (scheduleId: string,minute:number,hour:number,day:number,endMinute:number,endHour:number,endDay:number,sessionName: string, startingLists: string[]) => {
@@ -59,7 +59,7 @@ const ClassScheduleTab: React.FC<ClassScheduleTabProps>  = ({id, userToken, clas
 
     const createScheduledEvent = async (e: { preventDefault: () => void; }) => {
         if(e) e.preventDefault();
-        await setRequestInProgress(true)
+        setRequestInProgress(true)
         await makeRequest('addScheduledSession',{id, userToken, startingLists: newListNames, classId, hour:newStartHour, minute: newStartMinute,day: newStartDay,endHour:newEndHour,endMinute: newEndMinute,endDay:newEndDay,sessionName:newSessionName})
         await updateScheduledEvents();
         setRequestInProgress(false)

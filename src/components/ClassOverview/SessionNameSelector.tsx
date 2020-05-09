@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
 interface SessionNameSelectorProps {
-    closeSessionCreator(sessions: String[]): void
+    closeSessionCreator(sessions: string[]): void
     lists: string[]
 }
 
@@ -33,7 +33,7 @@ const SessionNameSelector: React.FC<SessionNameSelectorProps>  = ({closeSessionC
 
     const removeArraySlot = (e: { preventDefault: () => void; },index: number)=> {
         e.preventDefault();
-        setSessionNames(sessionNames.filter((item,i) => i!=index));
+        setSessionNames(sessionNames.filter((_,i) => i!==index));
     }
     return (
         <div className="modal fade show"  role="dialog">

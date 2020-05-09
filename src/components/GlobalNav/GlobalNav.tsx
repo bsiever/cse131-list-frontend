@@ -8,16 +8,17 @@ interface GlobalNavProps {
     fullName: string,
     refreshUserInfo(): void,
     goHome(): void,
-    logout(inactivity: boolean): Promise<boolean>
+    logout(inactivity: boolean): Promise<boolean>,
+    disableAudioAlerts: boolean
 }
 
-const GlobalNav: React.FC<GlobalNavProps>  = ({id, userToken, username, fullName, refreshUserInfo, goHome, logout}) => {
+const GlobalNav: React.FC<GlobalNavProps>  = ({id, userToken, username, fullName, disableAudioAlerts, refreshUserInfo, goHome, logout}) => {
 
     const [showModal, setShowModal] = useState(false);
 
     const logoutWrapper = async () => {
         const result = await logout(false)
-        await setShowModal(false);
+        setShowModal(false);
         return result;
     }
     return(
@@ -26,7 +27,7 @@ const GlobalNav: React.FC<GlobalNavProps>  = ({id, userToken, username, fullName
                 <h1 className="navbar-brand mr-auto mb-0 ml-sm-0 ml-auto" style={{cursor: 'pointer'}} onClick={goHome}>Virtual Lists</h1>
                 {id && <button className="btn btn-primary" type="button" data-toggle='modal' data-target='#userUpdateModal' aria-label="Open User Settings" onClick={()=>setShowModal(true)} >{username}</button> }
             </nav>
-            {showModal && <Sidebar id={id} userToken={userToken} fullName={fullName} refreshUserInfo={refreshUserInfo} close={()=>setShowModal(false)} logout={logoutWrapper}/> }
+            {showModal && <Sidebar id={id} userToken={userToken} fullName={fullName} disableAudioAlerts={disableAudioAlerts} refreshUserInfo={refreshUserInfo} close={()=>setShowModal(false)} logout={logoutWrapper}/> }
         </React.Fragment>
     )
 }
