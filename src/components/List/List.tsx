@@ -19,7 +19,7 @@ interface ListProps {
     sessionName: string,
     disableAudioAlerts: boolean
 }
-export enum WebSocketMessages {
+export enum WebSocketMessages{
     InitalizeSession = 'initSession',
     SetPosition = 'setPos',
     CloseListSession = 'closeListSession',
@@ -27,7 +27,8 @@ export enum WebSocketMessages {
     HelpEvent = 'helpEvent',
     HelperEvent = 'helperEvent',
     FlagRecorded = 'flagRecorded',
-    FullInfo = 'fullInfo'
+    FullInfo = 'fullInfo',
+    Ping = 'ping'
 }
 
 interface Message {
@@ -57,6 +58,7 @@ const List: React.FC<ListProps> = ({ id, userToken, list, leaveList, miniView, s
     const [fullClassInfo, setFullClassInfo] = useState(null as null | FullInfo)
     const [leavingList, setLeavingList] = useState(false);
     const [estimatedWaitTime, setEstimatedWaitTime] = useState(0);
+    const [presentObservers, setPresentObservers] = useState(-1)
     //const [helpUserTimer, setHelpUserTime] = useState(null) as [null |number, React.Dispatch<SetStateAction<null | number>>];
 
 
@@ -96,11 +98,13 @@ const List: React.FC<ListProps> = ({ id, userToken, list, leaveList, miniView, s
                             } else {
                                 setPosition(data.message.index)
                             }
+                            setPresentObservers(data.message.numObserversPresent)
                             setEstimatedWaitTime(data.message.estimatedWaitTime)
                             break;
                         case WebSocketMessages.SetPosition:
                             setPosition(data.message.index)
                             setEstimatedWaitTime(data.message.estimatedWaitTime)
+                            setPresentObservers(data.message.numObserversPresent)
                             break;
                         case WebSocketMessages.CloseListSession:
                             setLeavingList(true);
@@ -147,6 +151,7 @@ const List: React.FC<ListProps> = ({ id, userToken, list, leaveList, miniView, s
                             } 
                             setListTotal(data.message.totalNumber)
                             listTotalMirror = data.message.totalNumber
+                            setPresentObservers(data.message.numObserversPresent)
                             setFlaggedUsers(data.message.flaggedUsers)
                             setEstimatedWaitTime(data.message.estimatedWaitTime)
                             break;
@@ -229,22 +234,26 @@ const List: React.FC<ListProps> = ({ id, userToken, list, leaveList, miniView, s
         leaveList()
     }
     let mainWindow;
-    let estimatedWaitP = (estimatedWaitTime !== 0  && (listTotal !== 0 || list.permissionLevel == PermissionLevel.Student )&& estimatedWaitTime >= 60000) ? <p>Estimated Wait: {Math.floor(estimatedWaitTime / 60000)} minute(s)</p> : <p>Expected Wait: None</p>;
+    let estimatedWaitP = (estimatedWaitTime !== 0  && (listTotal !== 0 || list.permissionLevel == PermissionLevel.Student )&& estimatedWaitTime >= 60000) ? <p style={{marginBottom: '0'}}>Estimated Wait: {Math.floor(estimatedWaitTime / 60000)} minute(s)</p> : <p style={{marginBottom: '0'}}>Expected Wait: None</p>;
+    let numberOfTAs = <p>Number of TAs: {presentObservers !== -1 ? presentObservers: 'Loading'}</p>
     if (list.permissionLevel === PermissionLevel.Student) {
         mainWindow = <div>
-            <h2>Your Current Position: {position !== -1 ? position : 'Loading'}</h2>
+            <h2>Your Current Position: {position !== -1 ? (position !== 0 ? position : '0 (You Are Next)') : 'Loading'}</h2>
             {estimatedWaitP}
+            {numberOfTAs}
         </div>
     } else if (miniView) {
         return <div key={id} className='class_option align-items-center flex-fill col-md-5 rounded-lg bg-primary text-center p-3 pt-5 pb-5 mx-auto mb-3' onClick={() => selectList(list)} >
             <h3>{sessionName + ": " + list.listName}</h3>
             <p className='m-0'>List Count: {listTotal !== -1 ? listTotal : 'Loading'}</p>
             {estimatedWaitP}
+            {numberOfTAs}
         </div>
     } else {
         mainWindow = <div>
             <h2>Total List Members: {listTotal !== -1 ? listTotal : 'Loading'}</h2>
             {estimatedWaitP}
+            {numberOfTAs}
             <button className='btn btn-primary' onClick={helpNextUser} disabled={requestInProgress}>Help Next Person</button>
             <form className='form-inline justify-content-center m-2' onSubmit={markFlaggedUser}>
                 <div className='form-group'>
