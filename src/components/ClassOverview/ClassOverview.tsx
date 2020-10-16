@@ -57,18 +57,17 @@ const ClassOverview: React.FC<ClassOverviewProps>  = ({id, userToken, classId, c
     useEffect(() => {updateClassSessionsAndInfo()}, [updateClassSessionsAndInfo]); //Update on load
 
     useEffect(()=> {
-        console.log(remoteURL)
         if(remoteURL !== null) {
             return;
         }
         if(permissionLevel !== PermissionLevel.Student && remoteMode) {
             const promptResponse = window.prompt("What is your URL(including HTTPS://)?");
-            if(promptResponse === null) {
-                exitClass();
-                return;
-            } else {
-                setRemoteURL(promptResponse)
-            }
+            // if(promptResponse === null) {
+            //     exitClass();
+            //     return;
+            // } else {
+            setRemoteURL(promptResponse ?? "")
+            // }
         }
     },[permissionLevel,remoteMode,setRemoteURL,remoteURL, exitClass])
     
@@ -79,7 +78,7 @@ const ClassOverview: React.FC<ClassOverviewProps>  = ({id, userToken, classId, c
         setCreatingSesionNames(true);
     }
 
-    const createSessionCall = async (sessionNames: String[]) => {
+    const createSessionCall = async (sessionNames: string[]) => {
         setCreatingSesionNames(false);
         //Add Session
         await makeRequest('createSession', {id, userToken, classId, newSessionName: newName, startingLists: sessionNames});

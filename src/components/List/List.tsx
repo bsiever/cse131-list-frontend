@@ -37,7 +37,7 @@ interface Message {
 }
 
 interface FullInfo {
-    listUsers: [{ fullName: string }],
+    listUsers: [{ fullName: string, id: string }],
     observers: [{ fullName: string, permissionLevel: PermissionLevel, startTime: number, timedEventTime?: number, helpedStudents?: number, flaggedStudents?: number, helpedFlaggedStudents?: number }]
 }
 
@@ -45,6 +45,8 @@ interface FullInfo {
 var lastHelpedUserTime = 0;
 var helpUserTimerID: null | number = null;
 var listTotalMirror = -1;
+const INTERVAL_0_TO_1 = 5;
+const INTERVAL_1_TO_2 = 10;
 
 const List: React.FC<ListProps> = ({ id, userToken, list, leaveList, miniView, selectList, sessionName, disableAudioAlerts }) => {
 
@@ -54,7 +56,9 @@ const List: React.FC<ListProps> = ({ id, userToken, list, leaveList, miniView, s
     const [requestInProgress, setRequestInProgress] = useState(true);
     const [lastHelped, setLastHelped] = useState('')
     const [flagUserMessage, setFlagUserMessage] = useState('')
+    const [flagUserLevel, setFlagUserLevel] = useState(0)
     const [flaggedUsers, setFlaggedUsers] = useState({} as { [s: string]: string })
+    const [originalFlaggedUsers, setOriginalFlaggedUsers] = useState({} as { [s: string]: string })
     const [fullClassInfo, setFullClassInfo] = useState(null as null | FullInfo)
     const [leavingList, setLeavingList] = useState(false);
     const [estimatedWaitTime, setEstimatedWaitTime] = useState(0);
@@ -94,7 +98,7 @@ const List: React.FC<ListProps> = ({ id, userToken, list, leaveList, miniView, s
                             if (data.message.observer) {
                                 setListTotal(data.message.totalNumber)
                                 listTotalMirror = data.message.totalNumber
-                                setFlaggedUsers(data.message.flaggedUsers)
+                                setOriginalFlaggedUsers(data.message.flaggedUsers)
                             } else {
                                 setPosition(data.message.index)
                             }
@@ -123,11 +127,13 @@ const List: React.FC<ListProps> = ({ id, userToken, list, leaveList, miniView, s
                                 console.log(e)
                             }
                             
-                            if(list.remoteMode) {
+                            if(list.remoteMode && data.message.remoteURL) {
                                 await new Promise(resolve => setTimeout(resolve,1000));
                                 window.location.href = data.message.remoteURL
-                                setTimeout(()=>window.alert(`You are being helped by ${data.message.helperName}`+(list.remoteMode?"\nIf you are not redirected after clicking OK, please go to "+data.message.remoteURL:"")),100)
+                                setTimeout(()=>window.alert(`You are being helped by ${data.message.helperName}`+"\nIf you are not redirected after clicking OK, please go to "+data.message.remoteURL),100)
                                 return false
+                            } else {
+                                window.alert(`You are being helped by ${data.message.helperName}\nThe TA will call your name`)
                             }
                             setLeavingList(true);
                             leaveList();
@@ -152,12 +158,13 @@ const List: React.FC<ListProps> = ({ id, userToken, list, leaveList, miniView, s
                             setListTotal(data.message.totalNumber)
                             listTotalMirror = data.message.totalNumber
                             setPresentObservers(data.message.numObserversPresent)
-                            setFlaggedUsers(data.message.flaggedUsers)
+                            setOriginalFlaggedUsers(data.message.flaggedUsers)
                             setEstimatedWaitTime(data.message.estimatedWaitTime)
                             break;
                         case WebSocketMessages.FlagRecorded:
                             setLastHelped('')
                             setFlagUserMessage('')
+                            setFlagUserLevel(0)
                             break;
                         case WebSocketMessages.FullInfo:
                             setFullClassInfo({ listUsers: data.message.users, observers: data.message.tas })
@@ -172,6 +179,44 @@ const List: React.FC<ListProps> = ({ id, userToken, list, leaveList, miniView, s
         const interval = setInterval(launchSocket, 1000);
         return () => { clearInterval(interval); if (socket) { socket.close() } }
     }, [socket, joinList, setSocket, id, list, leaveList, userToken, leavingList, miniView]);
+
+    useEffect(()=>{
+        let timerId = setInterval(()=> {
+            let result = {} as { [s: string]: string }
+            for(let [name,message] of Object.entries(originalFlaggedUsers)) {
+                const bits  = message.split(' ')
+                const timeString = bits[1].length > 0 ? bits[1] : bits[2]
+                const indexColon = timeString.indexOf(':')
+                let hour = Number(timeString.substring(0,indexColon))
+                const modifier = bits[1].length > 0 ? bits[2]: bits[3]
+                if(modifier.substring(0,2) === 'PM' && hour !== 12) {
+                    hour += 12;
+                }
+                if(modifier.substring(0,2) === 'AM' && hour === 12) {
+                    hour = 0;
+                }
+                let minute = Number(timeString.substring(indexColon+1))
+                const d = new Date()
+                const currentHour = Number(d.toLocaleString('en-US', { hour: 'numeric', hour12: false, timeZone: 'America/Chicago' }))
+                const currentMinute = Number(d.toLocaleString('en-US', { minute: 'numeric', timeZone: 'America/Chicago' }))
+                if(hour !== currentHour) {
+                    minute -= 60;
+                }
+                let level = Number(message.slice(-1))
+                let diff =  currentMinute - minute;
+                if(level === 0 && diff >= INTERVAL_0_TO_1) {
+                    level+=1;
+                    diff -= INTERVAL_0_TO_1;
+                }
+                if(level === 1 && diff >= INTERVAL_1_TO_2) {
+                    level+=1;
+                }
+                result[name] = message.slice(0,-1)+level
+            }
+            setFlaggedUsers(result)
+        },1000)
+        return () => clearInterval(timerId)
+    },[originalFlaggedUsers])
 
 
     const sendWebsocketMessage = (action: string, data: object) => {
@@ -193,6 +238,20 @@ const List: React.FC<ListProps> = ({ id, userToken, list, leaveList, miniView, s
         }
     }
 
+    const helpUser = (helpeeId: string) => {
+        if (Date.now() - 1000 > lastHelpedUserTime) {
+            if (helpUserTimerID) { clearTimeout(helpUserTimerID) }
+            helpUserTimerID = null;
+            lastHelpedUserTime = Date.now();
+            sendWebsocketMessage('helpUser', {
+                id,
+                userToken,
+                list_id: list.id,
+                helpeeId
+            })
+        }
+    }
+
     const markFlaggedUser = async (e: { preventDefault: () => void; }) => {
         e.preventDefault();
         sendWebsocketMessage('flagUser', {
@@ -200,11 +259,12 @@ const List: React.FC<ListProps> = ({ id, userToken, list, leaveList, miniView, s
             userToken,
             list_id: list.id,
             studentName: lastHelped,
-            message: flagUserMessage
+            message: flagUserMessage,
+            startingLevel: flagUserLevel
         })
     }
 
-    const helpFlaggedUser = async (studentName: string, message: string) => {
+    const helpFlaggedUser = async (studentName: string) => {
         if (helpUserTimerID) { clearTimeout(helpUserTimerID) }
         helpUserTimerID = null;
         sendWebsocketMessage('helpFlaggedUser', {
@@ -212,7 +272,7 @@ const List: React.FC<ListProps> = ({ id, userToken, list, leaveList, miniView, s
             userToken,
             list_id: list.id,
             studentName,
-            message
+            message: originalFlaggedUsers[studentName]
         })
     }
 
@@ -235,7 +295,8 @@ const List: React.FC<ListProps> = ({ id, userToken, list, leaveList, miniView, s
     }
     let mainWindow;
     let estimatedWaitP = (estimatedWaitTime !== 0  && (listTotal !== 0 || list.permissionLevel == PermissionLevel.Student )&& estimatedWaitTime >= 60000) ? <p style={{marginBottom: '0'}}>Estimated Wait: {Math.floor(estimatedWaitTime / 60000)} minute(s)</p> : <p style={{marginBottom: '0'}}>Expected Wait: None</p>;
-    let numberOfTAs = <p>Number of TAs: {presentObservers !== -1 ? presentObservers: 'Loading'}</p>
+    let numberOfTAs = <p>Approximate Number of TAs: {presentObservers !== -1 ? presentObservers: 'Loading'}</p>
+    const flaggedUsersLevels = Object.entries(flaggedUsers).map(([user, message])=>Number(message.slice(-1)))
     if (list.permissionLevel === PermissionLevel.Student) {
         mainWindow = <div>
             <h2>Your Current Position: {position !== -1 ? (position !== 0 ? position : '0 (You Are Next)') : 'Loading'}</h2>
@@ -246,6 +307,7 @@ const List: React.FC<ListProps> = ({ id, userToken, list, leaveList, miniView, s
         return <div key={id} className='class_option align-items-center flex-fill col-md-5 rounded-lg bg-primary text-center p-3 pt-5 pb-5 mx-auto mb-3' onClick={() => selectList(list)} >
             <h3>{sessionName + ": " + list.listName}</h3>
             <p className='m-0'>List Count: {listTotal !== -1 ? listTotal : 'Loading'}</p>
+            <p className='m-0'>Flagged Users: G: {flaggedUsersLevels.filter(d=>d===0).length}, A: {flaggedUsersLevels.filter(d=>d===1).length}, P: {flaggedUsersLevels.filter(d=>d===2).length}</p>
             {estimatedWaitP}
             {numberOfTAs}
         </div>
@@ -268,22 +330,32 @@ const List: React.FC<ListProps> = ({ id, userToken, list, leaveList, miniView, s
                         <input type='text' className='form-control ml-3' maxLength={1000} value={flagUserMessage} onChange={e => setFlagUserMessage(e.target.value)} placeholder='Notes' required />
                     </label>
                 </div>
+                <div className='form-group'>
+                    <label className='text-left mr-3'>
+                        Level
+                        <select className='form-control ml-3' value={flagUserLevel} onChange={e=>setFlagUserLevel(Number(e.target.value))}>
+                            <option value={0}>General</option>
+                            <option value={1}>Advanced</option>
+                            <option value={2}>Professor/Head TA</option>
+                        </select>
+                    </label>
+                </div>
                 <button type='submit' className='btn btn-warning' disabled={requestInProgress}>Flag User for Help</button>
             </form>
             <h2>Flagged Users</h2>
             <table className='table table-dark'>
                 <tbody>
-                    <tr><th>Name</th><th>Message</th><th>Help User</th></tr>
-                    {Object.entries(flaggedUsers).sort((a, b) => a[1] > b[1] ? 1 : a[1] < b[1] ? -1 : 0).map(([studentName, message]) => <tr key={studentName}><td>{studentName}</td><td>{message}</td><td><button className='btn btn-primary' onClick={(e) => helpFlaggedUser(studentName, message)} disabled={requestInProgress}>&times;</button></td></tr>)}
+                    <tr><th>Name</th><th>Message</th><th>Level</th><th>Help User</th></tr>
+                    {Object.entries(flaggedUsers).sort((a, b) => a[1] > b[1] ? 1 : a[1] < b[1] ? -1 : 0).map(([studentName, message]) => <tr key={studentName}><td>{studentName}</td><td>{message.slice(0, -1)}</td><td>{Number(message.slice(-1)) === 2 ? 'Professor/Head TA':(Number(message.slice(-1)) === 1? 'Advanced': 'General')}</td><td><button className='btn btn-primary' onClick={() => helpFlaggedUser(studentName)} disabled={requestInProgress}>&times;</button></td></tr>)}
                 </tbody>
             </table>
             {list.permissionLevel === PermissionLevel.Professor && <button className='btn btn-primary m-2' onClick={requestFullInfo} disabled={requestInProgress}>Get Full List Info</button>}
             {fullClassInfo !== null &&
-                <div className='d-flex flex-column flex-md-row'>
+                <div className='d-flex flex-column'>
                     <table className='table table-dark flex-grow-1 table-bordered'>
                         <tbody>
-                            <tr><th>Position</th><th>Name</th></tr>
-                            {fullClassInfo.listUsers.map(({ fullName }, index) => <tr key={index}><td>{index}</td><td>{fullName}</td></tr>)}
+                            <tr><th>Position</th><th>Name</th><th>Help User</th></tr>
+                            {fullClassInfo.listUsers.map(({ fullName, id }, index) => <tr key={index}><td>{index}</td><td>{fullName}</td><td><button className='btn btn-success' onClick={()=>helpUser(id)} disabled={requestInProgress}>Help</button></td></tr>)}
                         </tbody>
                     </table>
                     <table className='table table-dark flex-grow-1 table-bordered'>
