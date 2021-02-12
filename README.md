@@ -1,4 +1,4 @@
-# TODO with create
+# Before Creation
 
 Make S3 and cloudfront
 
