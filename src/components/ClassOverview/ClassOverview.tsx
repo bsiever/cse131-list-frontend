@@ -6,7 +6,7 @@ import List, { ListInfo } from '../List/List';
 import SessionNameSelector from './SessionNameSelector';
 import './ClassOverview.css'
 
-const IMAGE_BUCKET_URL_PREX = window.location.host === '131list.com' ?  'https://virtual-lists-images-prod.s3.amazonaws.com/' : 'https://virtual-lists-images-dev.s3.amazonaws.com/'
+const IMAGE_BUCKET_URL_PREX = (window.location.host === 'wustl-cse.help' || window.location.host === 'wustlcse.help') ?  'https://virtual-list-images-prod.s3.amazonaws.com/' : 'https://virtual-list-images-dev.s3.amazonaws.com/'
 
 interface ClassOverviewProps {
     id: string,
