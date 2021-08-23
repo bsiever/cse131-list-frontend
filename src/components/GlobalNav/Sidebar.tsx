@@ -30,7 +30,7 @@ const Sidebar: React.FC<SidebarProps>  = ({id, userToken, fullName, disableAudio
             close();
             return
         } else {
-            setErrorMessage('An Error Occured');
+            setErrorMessage('An Error Occurred');
         }
         setRequestInProgress(false)
     }
