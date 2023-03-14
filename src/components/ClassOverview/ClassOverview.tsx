@@ -161,7 +161,7 @@ const ClassOverview: React.FC<ClassOverviewProps>  = ({id, userToken, classId, c
         let listList = []
         for(let givenSession of sessionsToProcess) {
             if(givenSession !== null){
-                for (const [list_id, listName] of Object.entries(givenSession.lists)) {
+                for (const [list_id, listName] of Object.entries(givenSession.lists).sort((a, b) => a[1] > b[1] ? 1 : a[1] < b[1] ? -1 : 0)) { // go through lists, sorted by name
                     if(permissionLevel >= PermissionLevel.TA) {
                         listList.push(
                             <List disableAudioAlerts={disableAudioAlerts} sessionName={givenSession.sessionName} selectList={selectList} miniView={true} id={id} userToken = {userToken} list = {{id:list_id,listName,permissionLevel,remoteMode,remoteURL:remoteURL}} leaveList  = {()=>{}}>
