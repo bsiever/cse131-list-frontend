@@ -63,8 +63,7 @@ const List: React.FC<ListProps> = ({ id, userToken, list, leaveList, miniView, s
     const [leavingList, setLeavingList] = useState(false);
     const [estimatedWaitTime, setEstimatedWaitTime] = useState(0);
     const [presentObservers, setPresentObservers] = useState(-1)
-    //const [helpUserTimer, setHelpUserTime] = useState(null) as [null |number, React.Dispatch<SetStateAction<null | number>>];
-
+    
 
     const joinList = useCallback((e: Event): any => {
         (e.target as WebSocket).send(JSON.stringify({
@@ -80,12 +79,6 @@ const List: React.FC<ListProps> = ({ id, userToken, list, leaveList, miniView, s
 
     //TODO fix this whole thing
     useEffect(() => {
-        const notifyTimeOut = () => {
-            helpUserTimerID = null;
-            if (listTotalMirror > 0) {
-                window.alert("You've been helping a student for over 10 minutes!");
-            }
-        }
         async function launchSocket() {
             if (!socket || ((socket.readyState === WebSocket.CLOSED || socket.readyState === WebSocket.CLOSING) && !leavingList)) {
                 console.log('Attempting Reconnection');
@@ -139,8 +132,6 @@ const List: React.FC<ListProps> = ({ id, userToken, list, leaveList, miniView, s
                             leaveList();
                             break;
                         case WebSocketMessages.HelperEvent:
-                            if (helpUserTimerID) { clearTimeout(helpUserTimerID) }
-                            helpUserTimerID = window.setTimeout(notifyTimeOut, 10  * 60 * 1000);
                             window.alert(`You are helping ${data.message.studentName}`)
                             setLastHelped(data.message.studentName)
                             break;
@@ -227,8 +218,6 @@ const List: React.FC<ListProps> = ({ id, userToken, list, leaveList, miniView, s
 
     const helpNextUser = () => {
         if (Date.now() - 1000 > lastHelpedUserTime) {
-            if (helpUserTimerID) { clearTimeout(helpUserTimerID) }
-            helpUserTimerID = null;
             lastHelpedUserTime = Date.now();
             sendWebsocketMessage('helpNextUser', {
                 id,
@@ -240,8 +229,6 @@ const List: React.FC<ListProps> = ({ id, userToken, list, leaveList, miniView, s
 
     const helpUser = (helpeeId: string) => {
         if (Date.now() - 1000 > lastHelpedUserTime) {
-            if (helpUserTimerID) { clearTimeout(helpUserTimerID) }
-            helpUserTimerID = null;
             lastHelpedUserTime = Date.now();
             sendWebsocketMessage('helpUser', {
                 id,
@@ -265,8 +252,6 @@ const List: React.FC<ListProps> = ({ id, userToken, list, leaveList, miniView, s
     }
 
     const helpFlaggedUser = async (studentName: string) => {
-        if (helpUserTimerID) { clearTimeout(helpUserTimerID) }
-        helpUserTimerID = null;
         sendWebsocketMessage('helpFlaggedUser', {
             id,
             userToken,
@@ -372,7 +357,6 @@ const List: React.FC<ListProps> = ({ id, userToken, list, leaveList, miniView, s
     return (
         <div className='align-items-center align-middle my-auto'>
             <div className='d-flex m-3 justify-content-center align-items-center'>
-                <button className='btn btn-primary m-3' onClick={() => leaveList()}>Back</button>
                 <button className='btn btn-danger m-3' onClick={() => chooseToLeaveList()}>Leave</button>
                 <h1>{sessionName + ": " + list.listName}</h1>
             </div>
