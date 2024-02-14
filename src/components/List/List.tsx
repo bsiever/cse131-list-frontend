@@ -82,9 +82,9 @@ const List: React.FC<ListProps> = ({ id, userToken, list, leaveList, miniView, s
     useEffect(() => {
         const notifyTimeOut = () => {
             helpUserTimerID = null;
-            if (listTotalMirror > 0) {
-                window.alert("You've been helping a student for over 10 minutes!");
-            }
+            // if (listTotalMirror > 0) { this is so annoying
+            //     window.alert("You've been helping a student for over 10 minutes!");
+            // }
         }
         async function launchSocket() {
             if (!socket || ((socket.readyState === WebSocket.CLOSED || socket.readyState === WebSocket.CLOSING) && !leavingList)) {
@@ -294,12 +294,13 @@ const List: React.FC<ListProps> = ({ id, userToken, list, leaveList, miniView, s
         leaveList()
     }
     let mainWindow;
+    let averageHelps: number;
     let estimatedWaitP = (estimatedWaitTime !== 0  && (listTotal !== 0 || list.permissionLevel == PermissionLevel.Student )&& estimatedWaitTime >= 60000) ? <p style={{marginBottom: '0'}}>Estimated Wait: {Math.floor(estimatedWaitTime / 60000)} minute(s)</p> : <p style={{marginBottom: '0'}}>Expected Wait: None</p>;
     let numberOfTAs = <p>Approximate Number of TAs: {presentObservers !== -1 ? presentObservers: 'Loading'}</p>
     const flaggedUsersLevels = Object.entries(flaggedUsers).map(([user, message])=>Number(message.slice(-1)))
     if (list.permissionLevel === PermissionLevel.Student) {
         mainWindow = <div>
-            <h2>Your Current Position: {position !== -1 ? (position !== 0 ? position : '0 (You Are Next)') : 'Loading'}</h2>
+            <h2>Your Current Position: {position !== -1 ? (position !== 0 ? position : '0 (You are next to be helped)') : 'Loading'}</h2>
             {estimatedWaitP}
             {numberOfTAs}
         </div>
@@ -312,6 +313,8 @@ const List: React.FC<ListProps> = ({ id, userToken, list, leaveList, miniView, s
             {numberOfTAs}
         </div>
     } else {
+        let totalHelps = fullClassInfo != null ? fullClassInfo.observers.reduce((acc, item)=> {return acc + (item.helpedStudents === undefined ? 0 : item.helpedStudents);}, 0): -1
+        averageHelps = totalHelps / (fullClassInfo == null ? -1 : fullClassInfo.observers.length);
         mainWindow = <div>
             <h2>Total List Members: {listTotal !== -1 ? listTotal : 'Loading'}</h2>
             {estimatedWaitP}
@@ -361,7 +364,7 @@ const List: React.FC<ListProps> = ({ id, userToken, list, leaveList, miniView, s
                     <table className='table table-dark flex-grow-1 table-bordered'>
                         <tbody>
                             <tr><th className='px-1'>Name</th><th className='px-1'>Helped</th><th className='px-1'>Flagged</th><th className='px-1'>Helped Flagged</th><th className='px-1'>Start</th><th className='px-1'>Last Seen</th></tr>
-                            {fullClassInfo.observers.map(({ fullName, startTime, helpedStudents, helpedFlaggedStudents, flaggedStudents, timedEventTime }, index) => <tr key={index}><td className='px-1'>{fullName}</td><td className='px-1'>{helpedStudents ? helpedStudents : 0}</td><td className='px-1'>{flaggedStudents ? flaggedStudents : 0}</td><td className='px-1'>{helpedFlaggedStudents ? helpedFlaggedStudents : 0}</td><td className='px-1'>{new Date(startTime).toLocaleTimeString('en-us', { hour: 'numeric', minute: 'numeric', hour12: true, timeZone: 'America/Chicago' })}</td><td className='px-1'>{timedEventTime ? new Date(timedEventTime).toLocaleTimeString('en-us', { hour: 'numeric', minute: 'numeric', hour12: true, timeZone: 'America/Chicago' }) : 'N/A'}</td></tr>)}
+                            {fullClassInfo.observers.map(({ fullName, startTime, helpedStudents, helpedFlaggedStudents, flaggedStudents, timedEventTime }, index) => <tr key={index}><td className='px-1'>{fullName}</td><td className='px-1'>{helpedStudents ? helpedStudents < averageHelps - 1 ? helpedStudents + "!" : "N/A" : "N/A"}</td><td className='px-1'>{flaggedStudents ? flaggedStudents : 0}</td><td className='px-1'>{helpedFlaggedStudents ? helpedFlaggedStudents : 0}</td><td className='px-1'>{new Date(startTime).toLocaleTimeString('en-us', { hour: 'numeric', minute: 'numeric', hour12: true, timeZone: 'America/Chicago' })}</td><td className='px-1'>{timedEventTime ? new Date(timedEventTime).toLocaleTimeString('en-us', { hour: 'numeric', minute: 'numeric', hour12: true, timeZone: 'America/Chicago' }) : 'N/A'}</td></tr>)}
                         </tbody>
                     </table>
                 </div>
